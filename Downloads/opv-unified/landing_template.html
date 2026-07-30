@@ -1,0 +1,639 @@
+<meta charset="utf-8">
+<title>Единый сервис — из отчёта в анкету за 40 секунд</title>
+<style>
+/*FONT_FACES*/
+
+/* ══════════════════════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════════════════════ */
+:root {
+  --ink:        #1B1330;
+  --ink-soft:   #4A3F63;
+  --paper:      #FBF7F1;
+  --paper-2:    #F3ECE0;
+  --surface:    #FFFFFF;
+  --violet:     #5B21B6;
+  --violet-2:   #7C3AED;
+  --violet-deep:#2E1065;
+  --violet-wash:#F1EAFB;
+  --gold:       #B45309;
+  --gold-wash:  #FBEEDD;
+  --line:       #E3D9EE;
+  --line-soft:  #ECE4D8;
+  --ok:         #0F6B4C;
+  --ok-wash:    #E4F3EC;
+
+  --serif: 'DM Serif Display', Georgia, serif;
+  --sans:  'DM Sans', -apple-system, "Segoe UI", sans-serif;
+  --mono:  ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+
+  --max: 860px;
+}
+
+:root[data-theme="dark"] {
+  --ink:        #F1EAFB;
+  --ink-soft:   #C6B8E0;
+  --paper:      #1C1330;
+  --paper-2:    #241A3D;
+  --surface:    #251A3F;
+  --violet:     #A481E8;
+  --violet-2:   #C4ABF5;
+  --violet-deep:#12081F;
+  --violet-wash:#2C1F49;
+  --gold:       #E8A855;
+  --gold-wash:  #3A2A16;
+  --line:       #3B2C5C;
+  --line-soft:  #382C4D;
+  --ok:         #6FD9AE;
+  --ok-wash:    #163A2C;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink:        #F1EAFB;
+    --ink-soft:   #C6B8E0;
+    --paper:      #1C1330;
+    --paper-2:    #241A3D;
+    --surface:    #251A3F;
+    --violet:     #A481E8;
+    --violet-2:   #C4ABF5;
+    --violet-deep:#12081F;
+    --violet-wash:#2C1F49;
+    --gold:       #E8A855;
+    --gold-wash:  #3A2A16;
+    --line:       #3B2C5C;
+    --line-soft:  #382C4D;
+    --ok:         #6FD9AE;
+    --ok-wash:    #163A2C;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   BASE
+══════════════════════════════════════════════════════════ */
+* , *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--violet-wash); color: var(--violet-deep); }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--violet); outline-offset: 3px; border-radius: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
+
+img, svg { display: block; max-width: 100%; }
+.wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+.tab-nums { font-variant-numeric: tabular-nums; }
+
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; text-wrap: balance; margin: 0; }
+p { margin: 0; }
+
+/* ══════════════════════════════════════════════════════════
+   NAV
+══════════════════════════════════════════════════════════ */
+.nav {
+  position: sticky; top: 0; z-index: 40;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.nav-in {
+  max-width: var(--max); margin: 0 auto; padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; letter-spacing: .2px; }
+.nav-mark {
+  width: 26px; height: 26px; border-radius: 6px;
+  background: var(--violet); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 15px; flex-shrink: 0;
+}
+.nav-cta {
+  font-size: 13px; font-weight: 700; text-decoration: none;
+  background: var(--violet); color: #fff;
+  padding: 9px 18px; border-radius: 8px; transition: transform .15s, box-shadow .15s;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--violet) 35%, transparent);
+}
+.nav-cta:hover { transform: translateY(-1px); }
+
+/* ══════════════════════════════════════════════════════════
+   HERO
+══════════════════════════════════════════════════════════ */
+.hero { padding: 64px 0 40px; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--violet); margin-bottom: 18px;
+}
+.eyebrow::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--gold); flex-shrink: 0;
+}
+.hero h1 {
+  font-size: clamp(32px, 5.4vw, 50px); line-height: 1.08; letter-spacing: -.01em;
+  max-width: 15ch;
+}
+.hero h1 em { font-style: italic; color: var(--violet); }
+.hero-sub {
+  margin-top: 20px; font-size: 17px; color: var(--ink-soft); max-width: 62ch; line-height: 1.65;
+}
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; align-items: center; }
+.btn {
+  font-family: var(--sans); font-weight: 700; font-size: 14.5px; text-decoration: none;
+  padding: 14px 26px; border-radius: 9px; border: none; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; transition: transform .15s, box-shadow .15s, background .15s;
+}
+.btn-primary { background: var(--violet); color: #fff; box-shadow: 0 6px 20px color-mix(in srgb, var(--violet) 38%, transparent); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 26px color-mix(in srgb, var(--violet) 45%, transparent); }
+.btn-primary:active { transform: translateY(0) scale(.98); }
+.btn-ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.btn-ghost:hover { border-color: var(--violet); color: var(--violet); }
+.hero-note { font-size: 12.5px; color: var(--ink-soft); margin-top: 12px; }
+
+/* ══════════════════════════════════════════════════════════
+   DEMO — chaos -> order
+══════════════════════════════════════════════════════════ */
+.demo {
+  margin-top: 48px; border-radius: 16px; overflow: hidden;
+  border: 1px solid var(--line); background: var(--surface);
+  box-shadow: 0 20px 60px -20px color-mix(in srgb, var(--violet-deep) 30%, transparent);
+}
+.demo-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px; background: var(--paper-2); border-bottom: 1px solid var(--line-soft);
+  font-size: 12px; color: var(--ink-soft);
+}
+.demo-head b { color: var(--ink); font-weight: 700; }
+.demo-arrow { color: var(--violet); font-weight: 700; }
+.demo-body { position: relative; min-height: 300px; }
+.demo-stage { display: grid; grid-template-columns: 1fr; }
+@media(min-width: 720px) { .demo-stage { grid-template-columns: 1fr 1fr; } }
+
+.chaos {
+  padding: 22px 20px; font-family: var(--mono); font-size: 11.5px; line-height: 1.9;
+  color: var(--ink-soft); background: var(--paper-2);
+  overflow: hidden; position: relative;
+  border-bottom: 1px solid var(--line-soft);
+}
+@media(min-width: 720px) { .chaos { border-bottom: none; border-right: 1px solid var(--line-soft); } }
+.chaos span {
+  display: inline-block; opacity: .78; will-change: transform, opacity;
+  animation: settle-out .9s ease-in both;
+}
+@keyframes settle-out {
+  from { opacity: 0; transform: translateY(6px) rotate(var(--rot, 0deg)); }
+  to   { opacity: .78; transform: none; }
+}
+.chaos-label, .clean-label {
+  position: absolute; top: 10px; right: 14px;
+  font-family: var(--sans); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-soft); opacity: .55;
+}
+.clean {
+  padding: 22px 20px; background: var(--surface); position: relative;
+}
+.clean-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 9px 0; border-bottom: 1px dotted var(--line);
+  font-size: 12.5px; opacity: 0; animation: rise-in .5s ease forwards;
+}
+.clean-row:last-child { border-bottom: none; }
+.clean-name { color: var(--ink); font-weight: 600; }
+.clean-val { font-family: var(--mono); color: var(--violet); font-weight: 700; font-variant-numeric: tabular-nums; }
+.clean-tag {
+  font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ok); background: var(--ok-wash); padding: 2px 7px; border-radius: 5px; margin-left: 8px;
+}
+.clean-tag.warn { color: #8F4008; background: var(--gold-wash); }
+:root[data-theme="dark"] .clean-tag.warn { color: var(--gold); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .clean-tag.warn { color: var(--gold); }
+}
+@keyframes rise-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+.clean-total {
+  display: flex; justify-content: space-between; margin-top: 14px; padding-top: 12px;
+  border-top: 1.5px solid var(--ink); font-weight: 700; font-size: 13px;
+  opacity: 0; animation: rise-in .5s ease forwards; animation-delay: 1.6s;
+}
+.clean-total b { font-family: var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .chaos span { animation: none; opacity: .78; }
+  .clean-row, .clean-total { animation: none; opacity: 1; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   SECTION SHELL
+══════════════════════════════════════════════════════════ */
+section { padding: 76px 0; }
+.sec-head { max-width: 46ch; margin-bottom: 40px; }
+.sec-eyebrow {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--violet); margin-bottom: 10px; display: block;
+}
+.sec-head h2 { font-size: clamp(24px, 3.4vw, 32px); line-height: 1.2; }
+.sec-head p { margin-top: 12px; color: var(--ink-soft); font-size: 15.5px; }
+
+/* Контент всегда виден по умолчанию — никакой opacity:0, зависящей от скролла:
+   быстрый скролл, переход по якорю (#pricing) или клавиатурная навигация
+   не должны иметь шанс оставить цену/фичи невидимыми. */
+
+/* ══════════════════════════════════════════════════════════
+   LEDGER — features as line items
+══════════════════════════════════════════════════════════ */
+.ledger { border-top: 1.5px solid var(--ink); }
+.ledger-row {
+  display: grid; grid-template-columns: 34px 1fr auto; gap: 18px; align-items: start;
+  padding: 26px 0; border-bottom: 1px solid var(--line);
+}
+.ledger-ico {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--violet-wash); color: var(--violet);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ledger-ico svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.ledger-main h3 { font-family: var(--sans); font-weight: 700; font-size: 16.5px; color: var(--ink); }
+.ledger-main p { margin-top: 6px; font-size: 14px; color: var(--ink-soft); line-height: 1.6; max-width: 46ch; }
+.ledger-meta {
+  font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft);
+  text-align: right; white-space: nowrap; padding-top: 3px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   STEPS
+══════════════════════════════════════════════════════════ */
+.steps { display: flex; flex-direction: column; gap: 0; }
+.step {
+  display: grid; grid-template-columns: 40px 1fr; gap: 18px;
+  padding: 22px 0; border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.step:last-child { border-bottom: none; }
+.step-num {
+  font-family: var(--serif); font-size: 22px; color: var(--violet);
+}
+.step h3 { font-family: var(--sans); font-weight: 700; font-size: 15.5px; }
+.step p { margin-top: 5px; font-size: 14px; color: var(--ink-soft); max-width: 52ch; }
+
+/* ══════════════════════════════════════════════════════════
+   TRUST
+══════════════════════════════════════════════════════════ */
+.trust-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 22px; }
+.trust-card {
+  border: 1px solid var(--line); border-radius: 12px; padding: 20px;
+  background: var(--surface);
+}
+.trust-card svg { width: 20px; height: 20px; fill: none; stroke: var(--violet); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 12px; }
+.trust-card h3 { font-family: var(--sans); font-weight: 700; font-size: 14.5px; }
+.trust-card p { margin-top: 6px; font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; }
+
+/* ══════════════════════════════════════════════════════════
+   PRICING — receipt stub
+══════════════════════════════════════════════════════════ */
+.receipt-wrap { display: flex; justify-content: center; }
+.receipt {
+  width: 100%; max-width: 380px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 4px;
+  box-shadow: 0 24px 50px -24px color-mix(in srgb, var(--violet-deep) 40%, transparent);
+  position: relative; padding: 30px 26px 26px;
+}
+.receipt::before {
+  content: ""; position: absolute; top: -1px; left: 0; right: 0; height: 10px;
+  background:
+    radial-gradient(circle at 10px 0, transparent 6px, var(--paper) 6px) 0 -1px / 20px 10px repeat-x;
+}
+.receipt-top { display: flex; align-items: flex-start; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.receipt-title { font-size: 11.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); text-align: center; padding-top: 3px; }
+.receipt-price { font-family: var(--serif); font-size: 46px; text-align: center; margin-top: 10px; letter-spacing: -.01em; }
+.receipt-price span { font-size: 16px; font-family: var(--sans); color: var(--ink-soft); font-weight: 500; }
+.receipt-per { text-align: center; font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+.receipt-list { margin-top: 24px; border-top: 1px dashed var(--line); padding-top: 18px; display: flex; flex-direction: column; gap: 11px; }
+.receipt-item { display: flex; gap: 10px; font-size: 13.5px; align-items: baseline; }
+.receipt-item svg { width: 14px; height: 14px; flex-shrink: 0; stroke: var(--ok); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transform: translateY(2px); }
+.receipt-kaspi {
+  margin-top: 22px; padding: 14px 16px; border-radius: 8px;
+  background: var(--violet-wash); font-size: 12.5px; color: var(--ink);
+}
+.receipt-kaspi .rk-row { display: flex; justify-content: space-between; padding: 3px 0; }
+.receipt-kaspi .rk-row b { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.receipt .btn { width: 100%; justify-content: center; margin-top: 20px; }
+.receipt-stamp {
+  font-family: var(--sans); font-size: 9.5px; font-weight: 800; letter-spacing: .07em;
+  color: var(--gold); border: 1.5px solid var(--gold); border-radius: 5px; padding: 3px 8px;
+  transform: rotate(6deg); flex-shrink: 0; white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════
+   FAQ
+══════════════════════════════════════════════════════════ */
+.faq-item { border-bottom: 1px solid var(--line); }
+.faq-q {
+  width: 100%; text-align: left; background: none; border: none; cursor: pointer;
+  font-family: var(--sans); font-weight: 700; font-size: 15px; color: var(--ink);
+  padding: 20px 0; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+}
+.faq-q .plus { font-family: var(--serif); font-size: 20px; color: var(--violet); transition: transform .2s; flex-shrink: 0; }
+.faq-item[data-open="true"] .plus { transform: rotate(45deg); }
+.faq-a { max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+.faq-item[data-open="true"] .faq-a { max-height: 240px; }
+.faq-a p { font-size: 14px; color: var(--ink-soft); line-height: 1.65; padding-bottom: 20px; max-width: 60ch; }
+
+/* ══════════════════════════════════════════════════════════
+   FINAL CTA
+══════════════════════════════════════════════════════════ */
+.final {
+  background: var(--violet-deep); color: #F4EEFF; border-radius: 20px;
+  padding: 56px 40px; text-align: center;
+}
+.final h2 { color: #fff; font-size: clamp(24px, 3.6vw, 34px); max-width: 22ch; margin: 0 auto; }
+.final p { margin-top: 14px; color: #C9B8EE; font-size: 15px; }
+.final .hero-actions { justify-content: center; margin-top: 26px; }
+.final .btn-ghost { border-color: #5A4485; color: #F4EEFF; }
+.final .btn-ghost:hover { border-color: #fff; color: #fff; }
+
+/* ══════════════════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════════════════ */
+footer { padding: 40px 0 60px; border-top: 1px solid var(--line-soft); margin-top: 20px; }
+.foot-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; font-size: 12.5px; color: var(--ink-soft); }
+.foot-row a { text-decoration: none; color: var(--ink-soft); }
+.foot-row a:hover { color: var(--violet); }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════════ */
+@media(max-width: 680px) {
+  .ledger-row { grid-template-columns: 30px 1fr; }
+  .ledger-meta { grid-column: 2; text-align: left; padding-top: 0; }
+  section { padding: 56px 0; }
+  .final { padding: 40px 22px; border-radius: 16px; }
+}
+</style>
+
+<nav class="nav">
+  <div class="nav-in">
+    <div class="nav-brand">
+      <span class="nav-mark">Е</span>
+      Единый сервис
+    </div>
+    <a class="nav-cta" href="#pricing">Оформить доступ</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- ══════ HERO ══════ -->
+  <section class="hero" style="padding-top:56px">
+    <div class="eyebrow">Для ипотечных брокеров и кредитных менеджеров</div>
+    <h1>Отчёт ПКБ или ГКБ — в готовую анкету, <em>пока клиент ждёт</em></h1>
+    <p class="hero-sub">
+      Загружаете кредитный отчёт клиента — получаете разобранные договоры, суммы, просрочки
+      и цепочки цессий, плюс готовую Excel-анкету для банка. Внутри той же подписки — калькулятор
+      ОПВ, расчёт вознаграждения по депозитам и бланки переуступки для Отбасы Банка.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#pricing">Оформить доступ — 25 000 ₸/мес</a>
+      <a class="btn btn-ghost" href="#how">Как это работает</a>
+    </div>
+    <div class="hero-note">Активация вручную в течение дня · оплата на Kaspi · без ежемесячного автосписания</div>
+
+    <!-- live demo: chaos -> order -->
+    <div class="demo">
+      <div class="demo-head">
+        <span><b>credit_report.pdf</b> · 19 страниц</span>
+        <span class="demo-arrow">→</span>
+        <span><b>anketa.xlsx</b> · готово</span>
+      </div>
+      <div class="demo-stage">
+        <div class="chaos">
+          <span class="chaos-label">исходный PDF</span>
+          <span style="--rot:-2deg">АО"KaspiBank"Кредиткарта</span>
+          <span style="--rot:1deg">Роль субъекта:Заёмщик</span>
+          <span style="--rot:-1deg">Мерзіміөткенкүндерсаны:10</span>
+          <span style="--rot:2deg">ДатазаявкиДеректержоқ</span>
+          <span style="--rot:-1.5deg">Кредитордыауыстыру</span>
+          <span style="--rot:1deg">ТОО«Коллекторскоеагентство</span>
+          <span style="--rot:-2deg">«GarantCollection»переуступка</span>
+          <span style="--rot:1.5deg">НепросроченныйосновнойдолгБИН</span>
+          <span style="--rot:-1deg">971240001315Шарттыңкезеңі</span>
+          <span style="--rot:2deg">Соңғытөлемкүні:Деректержоқ</span>
+        </div>
+        <div class="clean">
+          <span class="clean-label">разобрано сервисом</span>
+          <div class="clean-row" style="animation-delay:.15s">
+            <span class="clean-name">АО «Kaspi Bank» · карта</span>
+            <span class="clean-val tab-nums">42 087 ₸<span class="clean-tag warn">10 дн.</span></span>
+          </div>
+          <div class="clean-row" style="animation-delay:.45s">
+            <span class="clean-name">Народный Банк · займ</span>
+            <span class="clean-val tab-nums">16 796 ₸<span class="clean-tag">ОК</span></span>
+          </div>
+          <div class="clean-row" style="animation-delay:.75s">
+            <span class="clean-name">Отбасы банк · займ</span>
+            <span class="clean-val tab-nums">83 164 ₸<span class="clean-tag">ОК</span></span>
+          </div>
+          <div class="clean-row" style="animation-delay:1.05s">
+            <span class="clean-name">Garant → Credit Almaty</span>
+            <span class="clean-val tab-nums">1728 дн.<span class="clean-tag warn">цессия</span></span>
+          </div>
+          <div class="clean-total">
+            <span>Нагрузка / мес</span>
+            <b class="tab-nums">170 743 ₸</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ FEATURES ══════ -->
+  <section id="features">
+    <div class="sec-head reveal">
+      <span class="sec-eyebrow">Что внутри подписки</span>
+      <h2>Четыре инструмента, которыми вы пользуетесь каждый день — под одним ключом доступа</h2>
+      <p>Не отдельные покупки и не поиск шаблонов по чатам — один вход, один список инструментов.</p>
+    </div>
+
+    <div class="ledger reveal">
+      <div class="ledger-row">
+        <div class="ledger-ico"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></div>
+        <div class="ledger-main">
+          <h3>Парсер ПКБ / ГКБ</h3>
+          <p>Кредитный отчёт с 1cb.kz или id.mkb.kz → превью всех договоров, просрочек и цессий прямо в браузере, и Excel-анкета на скачивание.</p>
+        </div>
+        <div class="ledger-meta">40 сек · оба бюро</div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-ico"><svg viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
+        <div class="ledger-main">
+          <h3>Расчёт ОПВ</h3>
+          <p>Средняя зарплата по формуле ЕНПФ из взносов за 12 месяцев. Показывает, сколько довнести, чтобы выйти на нужную сумму за 1–6 месяцев.</p>
+        </div>
+        <div class="ledger-meta">формула ЕНПФ</div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-ico"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></div>
+        <div class="ledger-main">
+          <h3>Депозиты — вознаграждение</h3>
+          <p>Дата, на которую накопится нужная сумма вознаграждения, с учётом капитализации в последний рабочий день месяца.</p>
+        </div>
+        <div class="ledger-meta">ставка 2% · база 360</div>
+      </div>
+      <div class="ledger-row">
+        <div class="ledger-ico"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 16h4"/></svg></div>
+        <div class="ledger-main">
+          <h3>Бланки переуступки депозита</h3>
+          <p>Готовые бланки под возраст ребёнка (0–10, 10–14, 14–16, 16–18) — с точным списком документов и порядком инстанций для Отбасы Банка.</p>
+        </div>
+        <div class="ledger-meta">4 возрастные группы</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ HOW IT WORKS ══════ -->
+  <section id="how">
+    <div class="sec-head reveal">
+      <span class="sec-eyebrow">Активация</span>
+      <h2>Без интеграций и ожидания — доступ открывается в течение дня</h2>
+    </div>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-num tab-nums">1</div>
+        <div><h3>Переводите 25 000 ₸ на Kaspi</h3><p>Номер и получатель — на этой странице ниже. Комментарий к переводу не нужен.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num tab-nums">2</div>
+        <div><h3>Присылаете чек и своё имя</h3><p>В WhatsApp — кнопка на этой же странице подставит платёж автоматически.</p></div>
+      </div>
+      <div class="step">
+        <div class="step-num tab-nums">3</div>
+        <div><h3>Получаете ключ доступа</h3><p>Ключ привязывается к вашему устройству. Работает на телефоне и компьютере — сервис в браузере.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ TRUST ══════ -->
+  <section id="trust">
+    <div class="sec-head reveal">
+      <span class="sec-eyebrow">Работа с данными клиента</span>
+      <h2>Отчёт клиента — чувствительные данные. Мы обращаемся с ним соответственно</h2>
+    </div>
+    <div class="trust-grid reveal">
+      <div class="trust-card">
+        <svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 5-3 8-7 9-4-1-7-4-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        <h3>Файл не сохраняется</h3>
+        <p>PDF обрабатывается во временной папке и удаляется сразу после ответа. Ни лога, ни копии.</p>
+      </div>
+      <div class="trust-card">
+        <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/></svg>
+        <h3>ИИН маскируется</h3>
+        <p>В интерфейсе и в базе виден только последние 4 цифры — как в самой Excel-анкете.</p>
+      </div>
+      <div class="trust-card">
+        <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 4v16"/></svg>
+        <h3>Есть офлайн-версия</h3>
+        <p>Десктоп-парсер обрабатывает отчёт локально — данные вообще не покидают ваш компьютер.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ PRICING ══════ -->
+  <section id="pricing">
+    <div class="sec-head reveal" style="text-align:center;max-width:none">
+      <span class="sec-eyebrow">Подписка</span>
+      <h2>Одна цена — все инструменты</h2>
+    </div>
+    <div class="receipt-wrap reveal">
+      <div class="receipt">
+        <div class="receipt-top">
+          <div class="receipt-title">Единый сервис · месяц</div>
+          <div class="receipt-stamp">К ОПЛАТЕ</div>
+        </div>
+        <div class="receipt-price tab-nums">25 000 <span>₸</span></div>
+        <div class="receipt-per">без автосписания — оплата вручную</div>
+        <div class="receipt-list">
+          <div class="receipt-item"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Парсер ПКБ и ГКБ, без ограничения по числу отчётов</div>
+          <div class="receipt-item"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Калькуляторы ОПВ и депозитов</div>
+          <div class="receipt-item"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Готовые бланки переуступки</div>
+          <div class="receipt-item"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Десктоп-версия парсера в комплекте</div>
+        </div>
+        <div class="receipt-kaspi">
+          <div class="rk-row"><span>Kaspi перевод</span><b>+7 771 128 51 35</b></div>
+          <div class="rk-row"><span>Получатель</span><b>Салихалы</b></div>
+        </div>
+        <a class="btn btn-primary" id="btnWa" href="#" target="_blank" rel="noopener">Я оплатил — написать в WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ FAQ ══════ -->
+  <section id="faq">
+    <div class="sec-head reveal">
+      <span class="sec-eyebrow">Вопросы</span>
+      <h2>Коротко о том, что обычно спрашивают</h2>
+    </div>
+    <div class="reveal">
+      <div class="faq-item" data-open="false">
+        <button class="faq-q" onclick="toggleFaq(this)">Что если отчёт — это скан или фото, а не текстовый PDF?<span class="plus">+</span></button>
+        <div class="faq-a"><p>Онлайн-версия читает текстовые PDF (именно такие выдают 1cb.kz и id.mkb.kz). Для сканов — десктоп-версия с распознаванием изображений.</p></div>
+      </div>
+      <div class="faq-item" data-open="false">
+        <button class="faq-q" onclick="toggleFaq(this)">Можно на нескольких устройствах одним ключом?<span class="plus">+</span></button>
+        <div class="faq-a"><p>Ключ привязывается к первому устройству, с которого вошли. Для второго — отдельный ключ или перепривязка по запросу.</p></div>
+      </div>
+      <div class="faq-item" data-open="false">
+        <button class="faq-q" onclick="toggleFaq(this)">Что будет, если не продлить вовремя?<span class="plus">+</span></button>
+        <div class="faq-a"><p>Доступ мягко блокируется до оплаты — данные и настройки сохраняются, ничего не удаляется.</p></div>
+      </div>
+      <div class="faq-item" data-open="false">
+        <button class="faq-q" onclick="toggleFaq(this)">Отчёты ИПОТЕКИ и Одобрения банка тоже входят?<span class="plus">+</span></button>
+        <div class="faq-a"><p>Да — расчёт по банковским программам и максимальному одобрению доступен в том же сервисе после входа.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════ FINAL CTA ══════ -->
+  <section>
+    <div class="final reveal">
+      <h2>Следующий отчёт клиента — уже за 40 секунд</h2>
+      <p>25 000 ₸/мес, оплата на Kaspi, активация в течение дня.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#pricing">Оформить доступ</a>
+        <a class="btn btn-ghost" id="btnWa2" href="#" target="_blank" rel="noopener">Написать в WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <div class="foot-row">
+    <span>Единый сервис · подписка для ипотечных брокеров и кредитных менеджеров</span>
+    <a href="#pricing">Оформить доступ</a>
+  </div>
+</footer>
+
+<script>
+function toggleFaq(btn){
+  var item = btn.closest('.faq-item');
+  var open = item.getAttribute('data-open') === 'true';
+  document.querySelectorAll('.faq-item').forEach(function(i){ i.setAttribute('data-open','false'); });
+  item.setAttribute('data-open', open ? 'false' : 'true');
+}
+
+(function(){
+  var phone = '77711285135';
+  var msg = 'Здравствуйте! Хочу оформить подписку на Единый сервис (25 000 ₸/мес).';
+  var href = 'https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
+  var a1 = document.getElementById('btnWa'); if(a1) a1.href = href;
+  var a2 = document.getElementById('btnWa2'); if(a2) a2.href = href;
+})();
+
+</script>

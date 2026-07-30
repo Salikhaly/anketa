@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор вознаграждения по депозитам</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #F0EDF8;
+            padding: 15px;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 25px;
+        }
+        h1 {
+            text-align: center;
+            color: #5B21B6;
+            margin-bottom: 6px;
+            font-size: 24px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        .section {
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        .section-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #444;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .deposit-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 40px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .deposit-row input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 100%;
+        }
+        .deposit-row input:focus {
+            outline: none;
+            border-color: #5B21B6;
+        }
+        .btn-remove {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 40px;
+            height: 44px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-add {
+            width: 100%;
+            padding: 12px;
+            background: #EDE9FE;
+            color: #5B21B6;
+            border: 2px dashed #5B21B6;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .btn-add:hover { background: #DDD6FE; }
+        .btn-add:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #eee;
+            border-color: #999;
+            color: #999;
+        }
+        .total-box {
+            background: #e8f5e9;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-top: 10px;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+        .total-box.reward {
+            background: #fff3e0;
+            color: #e65100;
+            margin-top: 8px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #555;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 17px;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #5B21B6;
+        }
+        .btn-calc {
+            width: 100%;
+            padding: 18px;
+            background: #5B21B6;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-calc:hover { background: #4C1D95; }
+        .result-box {
+            background: #EDE9FE;
+            border: 2px solid #5B21B6;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            display: none;
+        }
+        .result-box.active { display: block; }
+        .result-main {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #DDD6FE;
+        }
+        .result-label {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .result-date {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4C1D95;
+            margin: 10px 0;
+        }
+        .result-days {
+            font-size: 18px;
+            color: #5B21B6;
+            font-weight: 600;
+        }
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .result-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .result-item-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .result-item-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #5B21B6;
+        }
+        .result-item-value.green { color: #2e7d32; }
+        .result-item-value.orange { color: #e65100; }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+            font-weight: 600;
+        }
+        .error.active { display: block; }
+        .note {
+            background: #fffde7;
+            border-left: 4px solid #fbc02d;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #555;
+            border-radius: 0 8px 8px 0;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            background: #5B21B6;
+            color: white;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .table-wrap {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th {
+            position: sticky;
+            top: 0;
+            background: #5B21B6;
+            color: white;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            z-index: 10;
+        }
+        td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        tr:nth-child(even) { background: #f8f9fa; }
+        tr:hover { background: #EDE9FE; }
+        .cap-row { background: #fff3e0 !important; font-weight: bold; }
+        .cap-row:hover { background: #ffe0b2 !important; }
+        .target-row { background: #e8f5e9 !important; font-weight: bold; }
+        .target-row:hover { background: #c8e6c9 !important; }
+        .target-row td { color: #1b5e20; }
+        .money { font-family: 'Courier New', monospace; }
+        .small { font-size: 11px; color: #888; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .badge-cap { background: #ff9800; color: white; }
+        .badge-target { background: #4caf50; color: white; }
+        .badge-wait { background: #e0e0e0; color: #555; }
+
+        .table-summary {
+            background: #EDE9FE;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .table-summary-title {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .table-summary-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4C1D95;
+        }
+        .table-summary-sub {
+            font-size: 14px;
+            color: #5B21B6;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 600px) {
+            .deposit-row { grid-template-columns: 1fr 1fr; }
+            .deposit-row .btn-remove { grid-column: 1 / -1; width: 100%; }
+            .result-grid { grid-template-columns: 1fr; }
+            .result-date { font-size: 24px; }
+            th, td { padding: 6px 4px; font-size: 12px; }
+        }
+    @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;}}
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>Калькулятор вознаграждения</h1>
+        <p class="subtitle">Ставка 2% годовых | Капитализация в последний рабочий день месяца | База 360 дней</p>
+
+        <div class="note">
+            <strong>Как это работает:</strong> Каждый день начисляется вознаграждение. В <strong>последний рабочий день месяца</strong> (не суббота/воскресенье) накопленное вознаграждение добавляется к депозиту (капитализация) и начинает приносить новые проценты. <strong>Общее вознаграждение</strong> — сумма ВСЕХ начисленных процентов за всё время.
+        </div>
+
+        <!-- Депозиты -->
+        <div class="section">
+            <div class="section-title">💰 Депозиты клиента (макс. 20)</div>
+            <div id="depositsList">
+                <div class="deposit-row">
+                    <input type="number" placeholder="Сумма депозита, ₸" class="dep-sum" oninput="updateTotal()">
+                    <input type="number" placeholder="Уже накоплено, ₸" class="dep-reward" value="0" oninput="updateTotal()">
+                    <button class="btn-remove" onclick="removeDeposit(this)" style="visibility:hidden">×</button>
+                </div>
+            </div>
+            <button class="btn-add" id="btnAdd" onclick="addDeposit()">+ Добавить депозит</button>
+            <div class="total-box">
+                <span>Общая сумма депозитов:</span>
+                <span id="totalDeposits">0 ₸</span>
+            </div>
+            <div class="total-box reward">
+                <span>Уже накоплено вознаграждения:</span>
+                <span id="totalCurrentReward">0 ₸</span>
+            </div>
+        </div>
+
+        <!-- Расчет -->
+        <div class="section">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('when')">📅 Когда будет сумма?</button>
+                <button class="tab-btn" onclick="switchTab('howmuch')">💰 Сколько к дате?</button>
+            </div>
+
+            <div id="tab-when" class="tab-content active">
+                <div class="input-group">
+                    <label>Какую сумму ОБЩЕГО ВОЗНАГРАЖДЕНИЯ нужно накопить? (₸)</label>
+                    <input type="number" id="targetReward" placeholder="500000" value="500000">
+                </div>
+                <div class="input-group">
+                    <label>Дата начала отсчета</label>
+                    <input type="date" id="startDate">
+                </div>
+                <button class="btn-calc" onclick="calculateWhen()">🔍 Найти дату</button>
+            </div>
+
+            <div id="tab-howmuch" class="tab-content">
+                <div class="input-group">
+                    <label>До какой даты считать?</label>
+                    <input type="date" id="targetDate">
+                </div>
+                <div class="input-group">
+                    <label>Дата начала отсчета</label>
+                    <input type="date" id="startDate2">
+                </div>
+                <button class="btn-calc" onclick="calculateHowMuch()">🔍 Сколько накопится?</button>
+            </div>
+
+            <div class="error" id="errorBox"></div>
+        </div>
+
+        <!-- Результат КОГДА -->
+        <div id="resultWhen" class="result-box">
+            <div class="result-main">
+                <div class="result-label">Общее вознаграждение достигнет</div>
+                <div class="result-date" id="resTarget"></div>
+                <div class="result-days" id="resDays"></div>
+            </div>
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="result-item-label">Дата</div>
+                    <div class="result-item-value" id="resDate"></div>
+                </div>
+                <div class="result-item">
+                    <div class="result-item-label">День недели</div>
+                    <div class="result-item-value" id="resWeekday"></div>
+                </div>
+                <div class="result-item">
+                    <div class="result-item-label">Депозит к этой дате</div>
+                    <div class="result-item-value green" id="resDeposit"></div>
+                </div>
+                <div class="result-item">
+                    <div class="result-item-label">Ежедневное вознаграждение</div>
+                    <div class="result-item-value orange" id="resDaily"></div>
+                </div>
+                <div class="result-item">
+                    <div class="result-item-label">Всего начислено процентов</div>
+                    <div class="result-item-value" style="color:#4C1D95;font-size:20px" id="resTotalReward"></div>
+                </div>
+                <div class="result-item">
+                    <div class="result-item-label">Капитализаций произошло</div>
+                    <div class="result-item-value" id="resCaps"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Результат СКОЛЬКО -->
+        <div id="resultHowMuch" class="result-box" style="border-color:#2e7d32; background:#e8f5e9;">
+            <div class="result-main" style="border-color:#a5d6a7;">
+                <div class="result-label">К выбранной дате общее вознаграждение</div>
+                <div class="result-date" style="color:#1b5e20" id="resHmReward"></div>
+                <div class="result-days" style="color:#2e7d32" id="resHmDays"></div>
+            </div>
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="result-item-label">Депозит к этой дате</div>
+                    <div class="result-item-value green" id="resHmDeposit"></div>
+                </div>
+                <div class="result-item">
+                    <div class="result-item-label">Ежедневное вознаграждение</div>
+                    <div class="result-item-value orange" id="resHmDaily"></div>
+                </div>
+                <div class="result-item">
+                    <div class="result-item-label">Всего (депозит + текущее)</div>
+                    <div class="result-item-value" style="color:#4C1D95" id="resHmTotal"></div>
+                </div>
+                <div class="result-item">
+                    <div class="result-item-label">Капитализаций</div>
+                    <div class="result-item-value" id="resHmCaps"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Таблица по дням -->
+        <div class="section" style="margin-top:20px;">
+            <div class="section-title">📊 Таблица по дням</div>
+
+            <div class="input-group">
+                <label>Целевая сумма вознаграждения для таблицы (₸)</label>
+                <input type="number" id="tableTarget" placeholder="550000" value="550000">
+            </div>
+            <div class="input-group">
+                <label>Сколько месяцев показать?</label>
+                <select id="tableMonths">
+                    <option value="1">1 месяц</option>
+                    <option value="3">3 месяца</option>
+                    <option value="6" selected>6 месяцев</option>
+                    <option value="12">12 месяцев</option>
+                    <option value="24">24 месяца</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Дата начала таблицы</label>
+                <input type="date" id="tableStartDate">
+            </div>
+
+            <button class="btn-calc" style="background:#2e7d32; margin-bottom:15px;" onclick="buildTable()">📋 Показать таблицу по дням</button>
+
+            <div id="tableSummary"></div>
+            <div id="tableContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация дат
+        let today = new Date();
+        document.getElementById('startDate').valueAsDate = today;
+        document.getElementById('startDate2').valueAsDate = today;
+        document.getElementById('tableStartDate').valueAsDate = today;
+        let future = new Date();
+        future.setMonth(future.getMonth() + 6);
+        document.getElementById('targetDate').valueAsDate = future;
+
+        const MAX_DEPOSITS = 20;
+        const WEEKDAYS = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+        const WEEKDAYS_FULL = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+        const MONTHS = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+        const MONTHS_FULL = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+        function formatMoney(num) {
+            return num.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+        function formatDate(d) {
+            return d.getDate() + ' ' + MONTHS_FULL[d.getMonth()] + ' ' + d.getFullYear();
+        }
+        function formatDateShort(d) {
+            return d.getDate().toString().padStart(2,'0') + '.' + (d.getMonth()+1).toString().padStart(2,'0') + '.' + d.getFullYear();
+        }
+
+        // Последний рабочий день месяца (не сб/вс)
+        function getLastWorkday(year, month) {
+            let lastDay = new Date(year, month, 0).getDate();
+            let date = new Date(year, month - 1, lastDay);
+            while (date.getDay() === 0 || date.getDay() === 6) {
+                date.setDate(date.getDate() - 1);
+            }
+            return date;
+        }
+
+        function getDeposits() {
+            let rows = document.querySelectorAll('.deposit-row');
+            let deposits = [];
+            rows.forEach(row => {
+                let sum = parseFloat(row.querySelector('.dep-sum').value) || 0;
+                let rew = parseFloat(row.querySelector('.dep-reward').value) || 0;
+                if (sum > 0) deposits.push({sum, reward: rew});
+            });
+            return deposits;
+        }
+
+        function updateTotal() {
+            let deposits = getDeposits();
+            let total = deposits.reduce((a,b) => a + b.sum, 0);
+            let totalRew = deposits.reduce((a,b) => a + b.reward, 0);
+            document.getElementById('totalDeposits').textContent = formatMoney(total) + ' ₸';
+            document.getElementById('totalCurrentReward').textContent = formatMoney(totalRew) + ' ₸';
+
+            let count = deposits.length;
+            document.getElementById('btnAdd').disabled = count >= MAX_DEPOSITS;
+            document.getElementById('btnAdd').textContent = count >= MAX_DEPOSITS ? 'Максимум 20 депозитов' : '+ Добавить депозит';
+        }
+
+        function addDeposit() {
+            let list = document.getElementById('depositsList');
+            let count = list.children.length;
+            if (count >= MAX_DEPOSITS) return;
+
+            let div = document.createElement('div');
+            div.className = 'deposit-row';
+            div.innerHTML = `
+                <input type="number" placeholder="Сумма депозита, ₸" class="dep-sum" oninput="updateTotal()">
+                <input type="number" placeholder="Уже накоплено, ₸" class="dep-reward" value="0" oninput="updateTotal()">
+                <button class="btn-remove" onclick="removeDeposit(this)">×</button>
+            `;
+            list.appendChild(div);
+            updateTotal();
+        }
+
+        function removeDeposit(btn) {
+            let row = btn.parentElement;
+            if (document.querySelectorAll('.deposit-row').length <= 1) {
+                row.querySelector('.dep-sum').value = '';
+                row.querySelector('.dep-reward').value = '0';
+                updateTotal();
+                return;
+            }
+            row.remove();
+            updateTotal();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+
+        function showError(msg) {
+            let box = document.getElementById('errorBox');
+            box.textContent = msg;
+            box.classList.add('active');
+            setTimeout(() => box.classList.remove('active'), 5000);
+        }
+
+        // Проверяем, является ли дата последним рабочим днем месяца
+        function isLastWorkday(date) {
+            let lastWork = getLastWorkday(date.getFullYear(), date.getMonth() + 1);
+            return date.getDate() === lastWork.getDate() && 
+                   date.getMonth() === lastWork.getMonth() && 
+                   date.getFullYear() === lastWork.getFullYear();
+        }
+
+        // Основная функция симуляции
+        function simulate(deposits, startDate, condition) {
+            let totalDeposit = deposits.reduce((a,b) => a + b.sum, 0);
+            let totalCurrentReward = deposits.reduce((a,b) => a + b.reward, 0);
+
+            if (totalDeposit <= 0) return null;
+
+            let date = new Date(startDate);
+            let accumulated = totalCurrentReward;
+            let totalRewardEver = totalCurrentReward;
+            let dailyRate = totalDeposit * 0.02 / 360;
+            let caps = 0;
+            let dayCount = 0;
+
+            while (dayCount < 3650) {
+                // Капитализация в последний рабочий день месяца
+                if (isLastWorkday(date) && dayCount > 0) {
+                    totalDeposit += accumulated;
+                    accumulated = 0;
+                    dailyRate = totalDeposit * 0.02 / 360;
+                    caps++;
+                }
+
+                if (condition(date, totalDeposit, accumulated, totalRewardEver, dailyRate, dayCount, caps)) {
+                    return {
+                        date: new Date(date),
+                        totalDeposit,
+                        accumulated,
+                        totalRewardEver,
+                        dailyRate,
+                        dayCount,
+                        caps
+                    };
+                }
+
+                accumulated += dailyRate;
+                totalRewardEver += dailyRate;
+                date.setDate(date.getDate() + 1);
+                dayCount++;
+            }
+            return null;
+        }
+
+        function calculateWhen() {
+            let deposits = getDeposits();
+            if (deposits.length === 0 || deposits.reduce((a,b) => a + b.sum, 0) <= 0) {
+                showError('Введите хотя бы один депозит!');
+                return;
+            }
+
+            let target = parseFloat(document.getElementById('targetReward').value) || 0;
+            if (target <= 0) {
+                showError('Введите целевую сумму вознаграждения!');
+                return;
+            }
+
+            let startDate = new Date(document.getElementById('startDate').value);
+            if (isNaN(startDate.getTime())) {
+                showError('Выберите дату начала!');
+                return;
+            }
+
+            let totalCurrentReward = deposits.reduce((a,b) => a + b.reward, 0);
+            if (totalCurrentReward >= target) {
+                showError('Цель уже достигнута! Уже накоплено ' + formatMoney(totalCurrentReward) + ' ₸');
+                return;
+            }
+
+            let result = simulate(deposits, startDate, (date, dep, acc, totalRew, daily, days, caps) => {
+                return totalRew >= target;
+            });
+
+            if (!result) {
+                showError('Слишком далекая дата (более 10 лет). Проверьте ввод.');
+                return;
+            }
+
+            document.getElementById('resTarget').textContent = formatMoney(target) + ' ₸';
+            document.getElementById('resDays').textContent = result.dayCount + ' дней (' + (result.dayCount / 30).toFixed(1) + ' мес.)';
+            document.getElementById('resDate').textContent = formatDate(result.date);
+            document.getElementById('resWeekday').textContent = WEEKDAYS_FULL[result.date.getDay()];
+            document.getElementById('resDeposit').textContent = formatMoney(result.totalDeposit) + ' ₸';
+            document.getElementById('resDaily').textContent = formatMoney(result.dailyRate) + ' ₸/день';
+            document.getElementById('resTotalReward').textContent = formatMoney(result.totalRewardEver) + ' ₸';
+            document.getElementById('resCaps').textContent = result.caps;
+
+            document.getElementById('resultWhen').classList.add('active');
+            document.getElementById('resultHowMuch').classList.remove('active');
+        }
+
+        function calculateHowMuch() {
+            let deposits = getDeposits();
+            if (deposits.length === 0 || deposits.reduce((a,b) => a + b.sum, 0) <= 0) {
+                showError('Введите хотя бы один депозит!');
+                return;
+            }
+
+            let startDate = new Date(document.getElementById('startDate2').value);
+            let targetDate = new Date(document.getElementById('targetDate').value);
+
+            if (isNaN(startDate.getTime()) || isNaN(targetDate.getTime())) {
+                showError('Выберите обе даты!');
+                return;
+            }
+            if (targetDate <= startDate) {
+                showError('Целевая дата должна быть позже даты начала!');
+                return;
+            }
+
+            let result = simulate(deposits, startDate, (date, dep, acc, totalRew, daily, days, caps) => {
+                return date >= targetDate;
+            });
+
+            if (!result) {
+                showError('Слишком далекая дата.');
+                return;
+            }
+
+            document.getElementById('resHmReward').textContent = formatMoney(result.totalRewardEver) + ' ₸';
+            document.getElementById('resHmDays').textContent = result.dayCount + ' дней';
+            document.getElementById('resHmDeposit').textContent = formatMoney(result.totalDeposit) + ' ₸';
+            document.getElementById('resHmDaily').textContent = formatMoney(result.dailyRate) + ' ₸/день';
+            document.getElementById('resHmTotal').textContent = formatMoney(result.totalDeposit + result.accumulated) + ' ₸';
+            document.getElementById('resHmCaps').textContent = result.caps;
+
+            document.getElementById('resultHowMuch').classList.add('active');
+            document.getElementById('resultWhen').classList.remove('active');
+        }
+
+        // ТАБЛИЦА ПО ДНЯМ
+        function buildTable() {
+            let deposits = getDeposits();
+            if (deposits.length === 0 || deposits.reduce((a,b) => a + b.sum, 0) <= 0) {
+                showError('Введите депозиты для таблицы!');
+                return;
+            }
+
+            let startDate = new Date(document.getElementById('tableStartDate').value || new Date());
+            let months = parseInt(document.getElementById('tableMonths').value);
+            let tableTarget = parseFloat(document.getElementById('tableTarget').value) || 0;
+
+            let endDate = new Date(startDate);
+            endDate.setMonth(endDate.getMonth() + months);
+
+            let totalDeposit = deposits.reduce((a,b) => a + b.sum, 0);
+            let accumulated = deposits.reduce((a,b) => a + b.reward, 0);
+            let totalRewardEver = accumulated;
+            let dailyRate = totalDeposit * 0.02 / 360;
+            let date = new Date(startDate);
+            let dayCount = 0;
+            let caps = 0;
+            let targetReachedDay = -1;
+            let targetReachedDate = null;
+
+            let rows = [];
+
+            while (date <= endDate && dayCount < 3650) {
+                // Капитализация в последний рабочий день месяца
+                let isCap = isLastWorkday(date) && dayCount > 0;
+                if (isCap) {
+                    totalDeposit += accumulated;
+                    accumulated = 0;
+                    dailyRate = totalDeposit * 0.02 / 360;
+                    caps++;
+                }
+
+                // Проверяем достижение цели
+                let targetStatus = '';
+                if (tableTarget > 0 && totalRewardEver >= tableTarget && targetReachedDay === -1) {
+                    targetReachedDay = dayCount;
+                    targetReachedDate = new Date(date);
+                    targetStatus = 'target';
+                } else if (tableTarget > 0 && totalRewardEver < tableTarget) {
+                    let needed = tableTarget - totalRewardEver;
+                    let daysNeeded = Math.ceil(needed / dailyRate);
+                    targetStatus = 'wait:' + daysNeeded;
+                } else if (tableTarget > 0) {
+                    targetStatus = 'done';
+                }
+
+                rows.push({
+                    date: new Date(date),
+                    dayCount: dayCount,
+                    deposit: totalDeposit,
+                    accumulated: accumulated,
+                    totalReward: totalRewardEver,
+                    dailyRate: dailyRate,
+                    isCap: isCap,
+                    targetStatus: targetStatus
+                });
+
+                accumulated += dailyRate;
+                totalRewardEver += dailyRate;
+                date.setDate(date.getDate() + 1);
+                dayCount++;
+            }
+
+            // Сводка
+            let summaryHtml = '';
+            if (targetReachedDay >= 0) {
+                summaryHtml = `
+                    <div class="table-summary">
+                        <div class="table-summary-title">✅ Цель ${formatMoney(tableTarget)} ₸ достигнута</div>
+                        <div class="table-summary-value">${formatDate(targetReachedDate)}</div>
+                        <div class="table-summary-sub">Через ${targetReachedDay} дней | ${WEEKDAYS_FULL[targetReachedDate.getDay()]}</div>
+                    </div>
+                `;
+            } else if (tableTarget > 0) {
+                let last = rows[rows.length - 1];
+                let needed = tableTarget - last.totalReward;
+                let daysNeeded = Math.ceil(needed / last.dailyRate);
+                let estDate = new Date(last.date);
+                estDate.setDate(estDate.getDate() + daysNeeded);
+                summaryHtml = `
+                    <div class="table-summary" style="background:#fff3e0;">
+                        <div class="table-summary-title" style="color:#e65100">⏳ Цель ${formatMoney(tableTarget)} ₸ ещё не достигнута</div>
+                        <div class="table-summary-value" style="color:#e65100">Примерно ${formatDate(estDate)}</div>
+                        <div class="table-summary-sub" style="color:#e65100">Ещё нужно ~${daysNeeded} дней (за пределами таблицы)</div>
+                    </div>
+                `;
+            }
+            document.getElementById('tableSummary').innerHTML = summaryHtml;
+
+            // Таблица
+            let html = '<div class="table-wrap"><table><thead><tr>';
+            html += '<th>День</th><th>Дата</th><th>День нед.</th><th>Депозит</th><th>+ за день</th><th>Текущее</th><th>Общее вознагр.</th><th>Статус</th>';
+            html += '</tr></thead><tbody>';
+
+            rows.forEach(row => {
+                let cls = '';
+                let statusHtml = '';
+
+                if (row.isCap) {
+                    cls = 'cap-row';
+                    statusHtml = '<span class="badge badge-cap">КАП</span>';
+                } else if (row.targetStatus === 'target') {
+                    cls = 'target-row';
+                    statusHtml = '<span class="badge badge-target">✅ ЦЕЛЬ!</span>';
+                } else if (row.targetStatus.startsWith('wait:')) {
+                    let days = row.targetStatus.split(':')[1];
+                    statusHtml = '<span class="badge badge-wait">еще ' + days + ' дн.</span>';
+                } else if (row.targetStatus === 'done') {
+                    statusHtml = '<span class="badge badge-target">+</span>';
+                }
+
+                html += `<tr class="${cls}">
+                    <td class="small">+${row.dayCount}</td>
+                    <td>${formatDateShort(row.date)}</td>
+                    <td class="small">${WEEKDAYS[row.date.getDay()]}</td>
+                    <td class="money">${formatMoney(row.deposit)}</td>
+                    <td class="money small">+${formatMoney(row.dailyRate)}</td>
+                    <td class="money">${formatMoney(row.accumulated)}</td>
+                    <td class="money" style="font-weight:bold;color:#5B21B6">${formatMoney(row.totalReward)}</td>
+                    <td>${statusHtml}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+        updateTotal();
+    </script>
+</body>
+</html>

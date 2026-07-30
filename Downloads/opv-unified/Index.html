@@ -1,0 +1,2159 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Ипотека · Депозиты · Расчёты — сервис</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏦%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════ */
+:root {
+  --ink:    #160E30;
+  --ink2:   #352560;
+  --muted:  #5B4E7A;
+  --faint:  #B8AECC;
+  --bg:     #F0EDF8;
+  --surf:   #FFFFFF;
+  --bdr:    #E2DCF0;
+  --bdr2:   #EDE9F7;
+
+  --v:      #5B21B6;
+  --v2:     #7C3AED;
+  --v3:     #EDE9FE;
+  --v4:     #F5F3FF;
+  --v5:     #DDD6FE;
+
+  --gold:   #B45309;
+  --gold2:  #D97706;
+  --gold3:  #F59E0B;
+  --gold4:  #FEF3C7;
+  --gold5:  #FFFBEB;
+
+  --grn:    #047857;
+  --grn2:   #D1FAE5;
+  --red:    #991B1B;
+  --red2:   #FEE2E2;
+  --red3:   #B91C1C;
+
+  --r:      16px;
+  --r2:     10px;
+  --r3:     8px;
+  --sh:     0 1px 4px rgba(91,33,182,.07), 0 8px 28px rgba(91,33,182,.09);
+  --sh2:    0 2px 12px rgba(91,33,182,.13);
+}
+
+/* ══════════════════════════════════════
+   BASE
+══════════════════════════════════════ */
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
+}
+body {
+  font-family:'DM Sans',sans-serif;
+  font-size:14px; line-height:1.55;
+  color:var(--ink); background:var(--bg);
+  min-height:100vh; -webkit-font-smoothing:antialiased;
+}
+
+/* ══════════════════════════════════════
+   HEADER
+══════════════════════════════════════ */
+.hdr {
+  background:var(--surf);
+  border-bottom:1px solid var(--bdr);
+  position:sticky; top:0; z-index:300;
+  box-shadow:0 1px 0 var(--bdr), 0 4px 24px rgba(91,33,182,.06);
+}
+.hdr-in {
+  max-width:1100px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between;
+  height:58px; padding:0 20px;
+}
+.brand { display:flex; align-items:center; gap:11px; }
+.brand-mark {
+  width:34px; height:34px;
+  background:linear-gradient(135deg,var(--v),var(--v2));
+  border-radius:9px; display:flex; align-items:center;
+  justify-content:center; font-size:17px;
+  box-shadow:0 3px 10px rgba(91,33,182,.28);
+}
+.brand-name { font-family:'DM Serif Display',serif; font-size:17px; color:var(--ink); }
+.brand-sub  { font-size:10px; color:var(--muted); font-weight:500; margin-top:-2px; }
+.hdr-r { display:flex; align-items:center; gap:8px; }
+
+.spill {
+  display:flex; align-items:center; gap:7px;
+  background:var(--v4); border:1px solid var(--bdr);
+  border-radius:999px; padding:5px 14px 5px 8px;
+  transition:.3s;
+}
+.dot {
+  width:7px; height:7px; border-radius:50%;
+  background:var(--faint); flex-shrink:0; transition:.3s;
+}
+.dot.on { background:#10B981; box-shadow:0 0 0 3px rgba(16,185,129,.2); }
+.sname { font-size:12px; font-weight:600; color:var(--ink2); }
+.stimer {
+  font-size:11px; font-weight:700; font-variant-numeric:tabular-nums;
+  color:var(--muted); background:rgba(91,33,182,.08);
+  padding:2px 8px; border-radius:5px; min-width:40px; text-align:center;
+  display:none; transition:.3s;
+}
+.stimer.warn { background:rgba(153,27,27,.1); color:var(--red3); animation:blink 1.5s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.45} }
+
+.btn-logout {
+  padding:7px 16px; border-radius:8px; font-family:inherit;
+  font-size:12px; font-weight:700; cursor:pointer;
+  background:var(--surf); color:var(--muted);
+  border:1.5px solid var(--bdr); transition:.15s;
+}
+.btn-logout:hover { border-color:var(--v); color:var(--v); }
+
+/* ══════════════════════════════════════
+   NAV TABS
+══════════════════════════════════════ */
+.nav-w {
+  background:var(--surf); border-bottom:1px solid var(--bdr);
+  position:sticky; top:58px; z-index:299;
+}
+.nav-tabs { max-width:1100px; margin:0 auto; display:flex; padding:0 20px; }
+.ntab {
+  display:flex; align-items:center; gap:7px;
+  padding:14px 20px; cursor:pointer;
+  font-size:13px; font-weight:600; color:var(--muted);
+  border-bottom:2px solid transparent; margin-bottom:-1px;
+  transition:.2s; background:none; border-top:none;
+  border-left:none; border-right:none; font-family:inherit;
+  white-space:nowrap;
+}
+.ntab .ni { font-size:15px; }
+.ntab.on { color:var(--v); border-bottom-color:var(--v); }
+.ntab:hover:not(.on) { color:var(--ink2); }
+/* badge на вкладке */
+.ntab .nbadge {
+  font-size:10px; font-weight:800; background:var(--v3);
+  color:var(--v); border-radius:999px; padding:1px 7px;
+  display:none;
+}
+.ntab .nbadge.show { display:inline; }
+
+/* ══════════════════════════════════════
+   MAIN
+══════════════════════════════════════ */
+.main { max-width:1100px; margin:0 auto; padding:22px 20px 60px; }
+.panel { display:none; animation:fadeUp .25s ease; }
+.panel.on { display:block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+/* ══════════════════════════════════════
+   GRID
+══════════════════════════════════════ */
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.g3 { display:grid; grid-template-columns:290px 1fr 276px; gap:16px; align-items:start; }
+.sticky { position:sticky; top:120px; }
+
+/* ══════════════════════════════════════
+   CARD
+══════════════════════════════════════ */
+.card {
+  background:var(--surf); border-radius:var(--r);
+  border:1px solid var(--bdr); box-shadow:var(--sh);
+  overflow:hidden; transition:box-shadow .2s;
+}
+.card:hover { box-shadow:var(--sh2); }
+.ch { padding:16px 20px 0; display:flex; align-items:center; gap:9px; }
+.ci {
+  width:28px; height:28px; border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; flex-shrink:0;
+}
+.ct { font-size:13px; font-weight:700; color:var(--ink); }
+.cb { padding:15px 20px 20px; }
+
+/* ══════════════════════════════════════
+   LOGIN
+══════════════════════════════════════ */
+.login-page {
+  min-height:calc(100vh - 59px);
+  display:flex; align-items:center; justify-content:center;
+  padding:24px 16px;
+}
+.login-card {
+  width:100%; max-width:420px;
+  background:var(--surf); border-radius:20px;
+  border:1px solid var(--bdr); padding:36px 32px 32px;
+  box-shadow:0 4px 40px rgba(91,33,182,.13);
+}
+.login-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:var(--v3); border-radius:999px;
+  padding:4px 12px; font-size:11px; font-weight:700;
+  color:var(--v2); margin-bottom:18px;
+}
+.login-h {
+  font-family:'DM Serif Display',serif;
+  font-size:26px; letter-spacing:-.3px; margin-bottom:5px;
+}
+.login-s { font-size:13px; color:var(--muted); margin-bottom:26px; }
+.login-ft { text-align:center; margin-top:18px; font-size:12px; color:var(--muted); }
+
+/* ══════════════════════════════════════
+   FORM
+══════════════════════════════════════ */
+.fl { margin-bottom:13px; }
+.fl:last-child { margin-bottom:0; }
+.lb {
+  display:block; font-size:10px; font-weight:700;
+  color:var(--muted); text-transform:uppercase;
+  letter-spacing:.65px; margin-bottom:5px;
+}
+.inp {
+  width:100%; padding:11px 14px;
+  border:1.5px solid var(--bdr); border-radius:var(--r2);
+  font-family:inherit; font-size:14px; font-weight:500;
+  color:var(--ink); background:var(--surf); outline:none;
+  transition:.2s; -webkit-appearance:none; appearance:none;
+}
+.inp:focus { border-color:var(--v2); box-shadow:0 0 0 3px rgba(124,58,237,.12); }
+.inp.gold { background:var(--gold5); border-color:rgba(180,83,9,.3); font-size:15px; font-weight:700; }
+.inp.gold:focus { border-color:var(--gold3); box-shadow:0 0 0 3px rgba(245,158,11,.12); }
+.inp.gold::placeholder { color:#C49A3C; opacity:.7; }
+.inp::-webkit-outer-spin-button, .inp::-webkit-inner-spin-button { opacity:.3; }
+
+/* live amount format */
+.inp-wrap { position:relative; }
+.inp-currency {
+  position:absolute; right:12px; top:50%; transform:translateY(-50%);
+  font-size:12px; font-weight:700; color:var(--faint); pointer-events:none;
+}
+
+/* ══════════════════════════════════════
+   SEGMENT CONTROL
+══════════════════════════════════════ */
+.seg { display:flex; gap:6px; flex-wrap:wrap; }
+.sbtn {
+  flex:1; padding:9px 10px;
+  border:1.5px solid var(--bdr); border-radius:var(--r2);
+  text-align:center; cursor:pointer; font-size:13px;
+  font-weight:600; color:var(--muted); transition:.2s;
+  font-family:inherit; background:var(--surf); white-space:nowrap;
+}
+.sbtn.on { border-color:var(--v2); background:var(--v3); color:var(--v); font-weight:700; }
+.sbtn:hover:not(.on) { border-color:var(--v); color:var(--v2); }
+
+/* ══════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════ */
+.btn {
+  display:flex; align-items:center; justify-content:center;
+  gap:7px; width:100%; padding:13px; border:none;
+  border-radius:var(--r2); font-family:inherit; font-size:14px;
+  font-weight:700; cursor:pointer; transition:all .15s; margin-top:14px;
+}
+.btn:disabled { opacity:.4; cursor:not-allowed !important; transform:none !important; }
+.btn-v {
+  background:linear-gradient(135deg,var(--v),var(--v2));
+  color:#fff; box-shadow:0 4px 14px rgba(91,33,182,.28);
+}
+.btn-v:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 7px 20px rgba(91,33,182,.36); }
+.btn-gold {
+  background:linear-gradient(135deg,#92400E,var(--gold2));
+  color:#fff; box-shadow:0 4px 14px rgba(180,83,9,.28);
+}
+.btn-gold:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 7px 20px rgba(180,83,9,.36); }
+.btn-ghost {
+  background:var(--v4); color:var(--v); border:1.5px solid var(--bdr);
+  margin-top:8px; font-size:12px; padding:9px;
+}
+.btn-ghost:hover { background:var(--v3); }
+.btn-outline {
+  background:transparent; color:var(--muted); border:1.5px solid var(--bdr);
+  margin-top:8px; font-size:12px; padding:9px; width:auto; flex:1;
+}
+.btn-outline:hover { border-color:var(--v); color:var(--v); background:var(--v4); }
+.btn-row { display:flex; gap:8px; margin-top:10px; }
+
+/* ══════════════════════════════════════
+   MSG
+══════════════════════════════════════ */
+.msg {
+  margin-top:10px; padding:10px 14px; border-radius:var(--r2);
+  font-size:12px; font-weight:600; line-height:1.45;
+  display:none; border:1.5px solid transparent; transition:.25s;
+}
+.msg.on { display:block; animation:fadeIn .2s; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.msg.ok   { background:#ECFDF5; color:#065F46; border-color:#A7F3D0; }
+.msg.err  { background:var(--red2); color:var(--red); border-color:#FECACA; }
+.msg.warn { background:var(--gold4); color:#92400E; border-color:#FDE68A; }
+.msg.info { background:var(--v3); color:var(--v); border-color:var(--v5); }
+
+/* ══════════════════════════════════════
+   LIVE STATUS BAR
+══════════════════════════════════════ */
+.live-bar {
+  display:flex; align-items:center; gap:7px;
+  font-size:11px; font-weight:600; color:var(--muted);
+  margin-top:8px; min-height:18px; transition:.3s;
+}
+.live-bar .ldot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--faint); flex-shrink:0; transition:.3s;
+}
+.live-bar.calc .ldot { background:var(--gold3); animation:pulse 1s ease-in-out infinite; }
+.live-bar.done .ldot { background:var(--grn); }
+.live-bar.err  .ldot { background:var(--red3); }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+
+/* ══════════════════════════════════════
+   AVG DISPLAY
+══════════════════════════════════════ */
+.avg-box {
+  background:linear-gradient(135deg,var(--v4),var(--v3));
+  border:1.5px solid rgba(124,58,237,.2);
+  border-radius:var(--r2); padding:16px 18px;
+  display:flex; justify-content:space-between; align-items:center;
+  margin:14px 0; transition:all .3s;
+}
+.avg-lbl { font-size:10px; font-weight:700; color:var(--v); text-transform:uppercase; letter-spacing:.7px; margin-bottom:5px; }
+.avg-num {
+  font-family:'DM Serif Display',serif;
+  font-size:28px; color:var(--v); letter-spacing:-.5px;
+  font-variant-numeric:tabular-nums; line-height:1;
+  transition:all .3s;
+}
+.avg-ico { font-size:28px; opacity:.35; }
+
+/* ══════════════════════════════════════
+   SKELETON LOADER
+══════════════════════════════════════ */
+.skel {
+  background:linear-gradient(90deg,var(--bdr2) 25%,var(--bdr) 50%,var(--bdr2) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.5s infinite;
+  border-radius:6px;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.skel-line { height:14px; margin-bottom:8px; }
+.skel-lg   { height:32px; margin-bottom:12px; }
+
+/* ══════════════════════════════════════
+   TARGET TABLE
+══════════════════════════════════════ */
+.tgt-wrap { border:1.5px solid rgba(180,83,9,.25); border-radius:var(--r2); overflow:hidden; margin-top:12px; display:none; }
+.tgt-wrap.on { display:block; animation:fadeIn .25s; }
+.tgt-head { background:linear-gradient(135deg,#92400E,var(--gold2)); padding:10px 14px; display:flex; align-items:center; gap:8px; }
+.tgt-ht   { font-size:12px; font-weight:700; color:#fff; }
+.tgt-body { background:var(--gold5); }
+.tgt-row  {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:9px 14px; border-bottom:1px solid rgba(180,83,9,.12);
+  transition:.15s;
+}
+.tgt-row:last-child { border-bottom:none; }
+.tgt-row:hover { background:rgba(180,83,9,.06); }
+.tgt-mo  { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:var(--gold); }
+.tgt-badge { width:22px; height:22px; border-radius:6px; background:rgba(180,83,9,.12); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:var(--gold); }
+.tgt-vals  { text-align:right; }
+.tgt-opv   { font-size:13px; font-weight:700; color:var(--ink2); }
+.tgt-sal   { font-size:10px; color:var(--muted); margin-top:1px; }
+
+/* ══════════════════════════════════════
+   MONTHS GRID
+══════════════════════════════════════ */
+.mgrid { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:6px; }
+.mcell .lb { margin-bottom:4px; }
+.mcell .inp { text-align:right; padding:9px 11px; font-size:13px; font-weight:600; transition:all .2s; }
+.mcell .inp:not(:placeholder-shown) { background:var(--v4); border-color:rgba(124,58,237,.22); color:var(--v); }
+
+/* ══════════════════════════════════════
+   PAYMENTS
+══════════════════════════════════════ */
+.pay-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; }
+.pay-item { background:var(--v4); border-radius:8px; padding:10px 8px; text-align:center; transition:.2s; }
+.pay-item:hover { background:var(--v3); }
+.pay-mo  { font-size:10px; font-weight:700; color:var(--muted); }
+.pay-val { font-size:13px; font-weight:800; color:var(--v); margin-top:3px; font-variant-numeric:tabular-nums; }
+
+/* ══════════════════════════════════════
+   BREAKDOWN TABLE
+══════════════════════════════════════ */
+.bd-head { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.7px; padding-bottom:11px; border-bottom:1.5px solid var(--bdr); margin-bottom:3px; }
+.bd-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--bdr2); transition:.15s; }
+.bd-row:last-child { border-bottom:none; }
+.bd-row:hover { padding-left:4px; }
+.bdn  { font-size:13px; color:var(--ink); font-weight:500; }
+.bdv  { font-size:13px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+.bd-row.dim .bdn { font-size:12px; color:var(--faint); }
+.bd-row.dim .bdv { color:var(--faint); }
+.bd-row.total { margin-top:8px; padding:14px 16px; background:var(--red2); border-radius:10px; border:none!important; }
+.bd-row.total .bdn { font-size:14px; font-weight:800; color:var(--red3); }
+.bd-row.total .bdv { font-size:22px; font-weight:800; color:var(--red3); font-family:'DM Serif Display',serif; }
+
+/* ══════════════════════════════════════
+   EMPTY STATE
+══════════════════════════════════════ */
+.empty { text-align:center; padding:36px 16px; }
+.eico  { font-size:38px; margin-bottom:11px; opacity:.45; }
+.empty p { font-size:13px; color:var(--muted); line-height:1.6; }
+
+/* ══════════════════════════════════════
+   ACTION BAR (copy, pdf)
+══════════════════════════════════════ */
+.action-bar {
+  display:flex; gap:8px; margin-top:14px;
+  padding-top:14px; border-top:1px solid var(--bdr);
+}
+.a-btn {
+  flex:1; padding:9px 12px; border-radius:8px;
+  font-family:inherit; font-size:12px; font-weight:700;
+  cursor:pointer; transition:.15s; border:1.5px solid var(--bdr);
+  background:var(--surf); color:var(--muted);
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.a-btn:hover { border-color:var(--v); color:var(--v); background:var(--v4); }
+
+/* ══════════════════════════════════════
+   SCENARIOS
+══════════════════════════════════════ */
+.scenario-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+.sc-card {
+  background:var(--surf); border:1.5px solid var(--bdr);
+  border-radius:var(--r); padding:20px; cursor:pointer;
+  transition:all .2s; box-shadow:var(--sh);
+}
+.sc-card:hover { border-color:var(--v2); background:var(--v4); transform:translateY(-2px); box-shadow:var(--sh2); }
+.sc-card.on { border-color:var(--v2); background:var(--v3); }
+.sc-ico  { font-size:28px; margin-bottom:10px; }
+.sc-name { font-size:14px; font-weight:700; color:var(--ink); margin-bottom:4px; }
+.sc-desc { font-size:12px; color:var(--muted); line-height:1.5; }
+
+.sc-target-input {
+  display:flex; gap:10px; align-items:flex-end;
+  background:var(--gold5); border:1.5px solid rgba(180,83,9,.25);
+  border-radius:var(--r2); padding:14px 16px; margin-bottom:16px;
+}
+.sc-target-input .fl { flex:1; margin:0; }
+.sc-target-input .btn { width:auto; padding:11px 20px; margin:0; }
+
+/* ══════════════════════════════════════
+   HISTORY
+══════════════════════════════════════ */
+.hist-list { display:flex; flex-direction:column; gap:10px; }
+.hist-item {
+  background:var(--surf); border:1px solid var(--bdr);
+  border-radius:var(--r2); padding:14px 16px;
+  display:flex; justify-content:space-between; align-items:flex-start;
+  transition:.2s; box-shadow:0 1px 4px rgba(91,33,182,.05);
+}
+.hist-item:hover { border-color:var(--v); background:var(--v4); }
+.hist-left { flex:1; }
+.hist-date { font-size:11px; color:var(--muted); margin-bottom:3px; font-weight:600; }
+.hist-mode { font-size:13px; font-weight:700; color:var(--ink2); }
+.hist-sum  { font-size:12px; color:var(--muted); margin-top:2px; }
+.hist-right { text-align:right; flex-shrink:0; margin-left:16px; }
+.hist-avg  { font-size:15px; font-weight:800; color:var(--v); font-variant-numeric:tabular-nums; }
+.hist-total{ font-size:11px; color:var(--muted); }
+.hist-badge {
+  display:inline-block; padding:2px 8px; border-radius:999px;
+  font-size:10px; font-weight:700; margin-right:4px;
+}
+.hb-var { background:var(--v3); color:var(--v); }
+.hb-eq  { background:var(--gold4); color:var(--gold); }
+.hb-buh { background:var(--red2); color:var(--red3); }
+.hb-sc  { background:var(--grn2); color:var(--grn); }
+
+/* ══════════════════════════════════════
+   PDF MODAL
+══════════════════════════════════════ */
+.overlay {
+  position:fixed; inset:0; background:rgba(22,14,48,.5);
+  display:none; align-items:center; justify-content:center;
+  z-index:999; backdrop-filter:blur(4px); padding:20px;
+}
+.overlay.on { display:flex; animation:fadeIn .2s; }
+.modal {
+  background:var(--surf); border-radius:20px;
+  width:100%; max-width:600px; max-height:90vh;
+  overflow-y:auto; box-shadow:0 20px 60px rgba(22,14,48,.3);
+  animation:slideUp .25s ease;
+}
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:none;opacity:1} }
+.modal-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 24px 16px; border-bottom:1px solid var(--bdr); position:sticky; top:0; background:var(--surf); z-index:1;
+}
+.modal-title { font-family:'DM Serif Display',serif; font-size:18px; }
+.modal-close { background:none; border:none; cursor:pointer; font-size:20px; color:var(--muted); padding:4px; line-height:1; }
+.modal-body  { padding:20px 24px 24px; }
+
+/* PDF Preview */
+.pdf-preview {
+  border:1px solid var(--bdr); border-radius:8px;
+  padding:24px; font-size:12px; background:#FAFAF8;
+  font-family:'DM Sans',sans-serif;
+}
+.pdf-logo { font-family:'DM Serif Display',serif; font-size:18px; color:var(--v); margin-bottom:4px; }
+.pdf-meta { font-size:11px; color:var(--muted); margin-bottom:16px; }
+.pdf-section { margin-bottom:14px; }
+.pdf-section-title { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.7px; color:var(--muted); margin-bottom:8px; }
+.pdf-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--bdr2); font-size:12px; }
+.pdf-row:last-child { border-bottom:none; }
+.pdf-row.total-r { font-weight:800; color:var(--red3); border-top:2px solid #FECACA; border-bottom:none; }
+.pdf-total-big { font-size:18px; font-weight:800; color:var(--red3); text-align:center; margin-top:14px; padding:12px; background:var(--red2); border-radius:8px; }
+
+/* ══════════════════════════════════════
+   SPINNER
+══════════════════════════════════════ */
+.spin {
+  display:inline-block; width:13px; height:13px;
+  border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff; border-radius:50%;
+  animation:spin .7s linear infinite;
+  vertical-align:middle; margin-right:5px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+.spin.dark { border-color:rgba(91,33,182,.2); border-top-color:var(--v); }
+
+/* ══════════════════════════════════════
+   DIV
+══════════════════════════════════════ */
+.div { height:1px; background:var(--bdr); margin:14px 0; }
+
+/* ══════════════════════════════════════
+   PAGE HERO
+══════════════════════════════════════ */
+.hero {
+  background:linear-gradient(135deg,var(--v),var(--v2));
+  border-radius:var(--r); padding:22px 26px; margin-bottom:18px;
+  display:flex; align-items:center; gap:16px;
+}
+.hero-ico { width:48px; height:48px; background:rgba(255,255,255,.15); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; color:#fff; }
+.hero-ico .ic { width:26px; height:26px; }
+.hero h2  { font-family:'DM Serif Display',serif; font-size:20px; color:#fff; letter-spacing:-.3px; }
+.hero p   { font-size:13px; color:rgba(255,255,255,.7); margin-top:2px; }
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media(min-width:900px) {
+  .stimer { display:inline-block; }
+}
+@media(max-width:960px) {
+  .g3 { grid-template-columns:1fr 1fr; }
+  .g3 > *:last-child { grid-column:span 2; }
+  .scenario-grid { grid-template-columns:1fr 1fr; }
+  .sticky { position:static; }
+}
+@media(max-width:699px) {
+  .g2, .g3 { grid-template-columns:1fr; }
+  .g3 > *:last-child { grid-column:span 1; }
+  .scenario-grid { grid-template-columns:1fr; }
+  .brand-sub, .sname { display:none; }
+  .hero { padding:16px 18px; }
+  .hero h2 { font-size:17px; }
+  .ntab { padding:12px 13px; font-size:12px; }
+  .pay-grid { grid-template-columns:1fr 1fr; }
+  .mgrid { grid-template-columns:1fr 1fr; }
+  .main { padding:16px 14px 48px; }
+  .btn-row { flex-direction:column; }
+}
+@media(max-width:420px) {
+  .login-card { padding:26px 18px 22px; }
+  .sc-target-input { flex-direction:column; }
+  .hdr-in { padding:0 14px; }
+}
+
+/* ══════════════════════════════════════
+   EMBEDDED TOOLS (iframe isolation)
+══════════════════════════════════════ */
+.tool-frame-wrap {
+  background:var(--surf); border:1px solid var(--bdr);
+  border-radius:var(--r); overflow:hidden; box-shadow:var(--sh);
+}
+.tool-frame {
+  width:100%; min-height:1200px; border:0; display:block; background:#fff;
+}
+
+/* ══════════════════════════════════════
+   SUBSCRIPTION BADGE + PAYWALL
+══════════════════════════════════════ */
+.sub-badge {
+  display:none; align-items:center; gap:6px;
+  background:var(--grn2); color:var(--grn);
+  border-radius:999px; padding:5px 12px;
+  font-size:11px; font-weight:700; white-space:nowrap;
+}
+.sub-badge.warn { background:var(--gold4); color:var(--gold); }
+.sub-badge.crit { background:var(--red2); color:var(--red3); }
+
+.paywall { max-width:520px; margin:40px auto; }
+.paywall-card {
+  background:var(--surf); border:1px solid var(--bdr);
+  border-radius:var(--r); box-shadow:var(--sh); padding:34px 30px; text-align:center;
+}
+.paywall-ico { font-size:44px; margin-bottom:10px; }
+.paywall h2 { font-family:'DM Serif Display',serif; font-size:24px; margin-bottom:8px; color:var(--ink); }
+.paywall p { color:var(--muted); font-size:14px; margin-bottom:6px; }
+.paywall-price {
+  font-family:'DM Serif Display',serif; font-size:34px; color:var(--v);
+  margin:16px 0 4px;
+}
+.paywall-kaspi {
+  background:var(--v4); border:1px dashed var(--v5); border-radius:var(--r2);
+  padding:16px; margin:18px 0; text-align:left;
+}
+.paywall-kaspi .row { display:flex; justify-content:space-between; gap:10px; padding:4px 0; font-size:13px; }
+.paywall-kaspi .row b { color:var(--ink2); font-variant-numeric:tabular-nums; }
+.paywall-steps { text-align:left; margin:14px 0 0 0; color:var(--ink2); font-size:13px; line-height:1.9; padding-left:20px; }
+.kaspi-phone-cell { display:flex; align-items:center; gap:8px; }
+.kbtn {
+  font-family:inherit; font-size:11px; font-weight:700; cursor:pointer;
+  background:var(--v3); color:var(--v); border:1px solid var(--v5);
+  border-radius:7px; padding:4px 10px; transition:.15s;
+}
+.kbtn:hover { background:var(--v5); }
+.kbtn.done { background:var(--grn2); color:var(--grn); border-color:var(--grn2); }
+.pay-qr { display:block; width:172px; height:172px; margin:16px auto 4px; border-radius:12px; border:1px solid var(--bdr); }
+.pay-actions { display:flex; gap:10px; margin-top:18px; }
+.pay-actions .btn { flex:1; text-decoration:none; display:flex; align-items:center; justify-content:center; }
+
+/* ── SVG-иконки ── */
+.ntab .ni { display:inline-flex; align-items:center; }
+.ic { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+
+/* ── Меню «Ещё» (мобайл) ── */
+.nav-more { position:relative; display:none; }
+.more-menu { position:absolute; right:0; top:calc(100% + 4px); background:var(--surf); border:1px solid var(--bdr); border-radius:12px; box-shadow:var(--sh2); padding:6px; min-width:200px; display:none; z-index:400; }
+.more-menu.open { display:block; }
+.more-menu button { display:block; width:100%; text-align:left; background:none; border:0; padding:11px 12px; border-radius:9px; font-family:inherit; font-size:13px; font-weight:600; color:var(--ink2); cursor:pointer; }
+.more-menu button:hover { background:var(--v4); color:var(--v); }
+@media(max-width:760px){
+  .ntab-sec { display:none; }
+  .nav-more { display:block; }
+}
+
+/* ── Дашборд ── */
+.dash-hero { margin-bottom:18px; }
+.dash-hero h2 { font-family:'DM Serif Display',serif; font-size:26px; letter-spacing:-.4px; }
+.dash-hero p { color:var(--muted); font-size:13px; margin-top:3px; }
+.dash-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+.tile { display:flex; flex-direction:column; align-items:flex-start; text-align:left; background:var(--surf); border:1px solid var(--bdr); border-radius:var(--r); box-shadow:var(--sh); padding:18px; cursor:pointer; transition:transform .18s, box-shadow .18s, border-color .18s; font-family:inherit; }
+.tile:hover { transform:translateY(-3px); box-shadow:var(--sh2); border-color:var(--v5); }
+.tile-ic { width:42px; height:42px; border-radius:11px; background:var(--v3); color:var(--v); display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+.tile-ic .ic { width:22px; height:22px; }
+.tile b { font-size:15px; color:var(--ink); margin-bottom:3px; }
+.tile small { font-size:12px; color:var(--muted); line-height:1.5; }
+
+/* ── Логин: превью возможностей ── */
+.login-feats { display:flex; gap:8px; justify-content:center; margin-top:16px; flex-wrap:wrap; }
+.login-feats .chip { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:var(--v); background:var(--v4); border:1px solid var(--v5); border-radius:999px; padding:5px 11px; }
+.login-feats .ic { width:14px; height:14px; }
+
+/* ── Скелетоны загрузки инструментов ── */
+.tool-skeleton { padding:22px; display:flex; flex-direction:column; gap:14px; }
+.sk { border-radius:10px; background:linear-gradient(90deg, var(--bdr2) 25%, var(--v4) 37%, var(--bdr2) 63%); background-size:400% 100%; animation:shimmer 1.4s ease infinite; }
+.sk-1 { height:64px; } .sk-2 { height:120px; } .sk-3 { height:240px; }
+@keyframes shimmer { 0% { background-position:100% 0; } 100% { background-position:-100% 0; } }
+
+/* ── Дашборд: статус подписки ── */
+.dash-status { display:flex; align-items:center; gap:14px; background:var(--surf); border:1px solid var(--bdr); border-left:4px solid var(--grn); border-radius:var(--r); box-shadow:var(--sh); padding:16px 20px; margin-bottom:18px; }
+.dash-status.warn { border-left-color:var(--gold3); }
+.dash-status.crit { border-left-color:var(--red3); }
+.dash-status .ds-num { font-family:'DM Serif Display',serif; font-size:38px; line-height:1; color:var(--grn); min-width:52px; text-align:center; }
+.dash-status.warn .ds-num { color:var(--gold2); }
+.dash-status.crit .ds-num { color:var(--red3); }
+.dash-status .ds-ico { width:44px; height:44px; border-radius:50%; background:var(--grn2); color:var(--grn); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; }
+.dash-status .ds-t { font-weight:700; font-size:15px; color:var(--ink); }
+.dash-status .ds-s { font-size:12px; color:var(--muted); margin-top:1px; }
+
+/* ── Онбординг-тур ── */
+.tour { position:fixed; inset:0; z-index:1000; }
+.tour-spot { position:absolute; border-radius:12px; box-shadow:0 0 0 9999px rgba(20,10,40,.62); border:2px solid #fff; transition:top .3s cubic-bezier(.4,0,.2,1), left .3s cubic-bezier(.4,0,.2,1), width .3s, height .3s; pointer-events:none; }
+.tour-pop { position:absolute; width:290px; max-width:calc(100vw - 32px); background:var(--surf); border-radius:14px; box-shadow:0 14px 44px rgba(0,0,0,.32); padding:18px; transition:top .3s, left .3s; }
+.tour-step { font-size:11px; font-weight:700; color:var(--v); letter-spacing:.6px; }
+.tour-t { font-family:'DM Serif Display',serif; font-size:18px; margin:4px 0 6px; color:var(--ink); }
+.tour-d { font-size:13px; color:var(--ink2); line-height:1.55; }
+.tour-nav { display:flex; justify-content:space-between; align-items:center; margin-top:16px; }
+.tour-skip { background:none; border:0; color:var(--muted); font-family:inherit; font-size:12px; cursor:pointer; padding:8px 6px; }
+.tour-next { background:var(--v); color:#fff; border:0; border-radius:9px; font-family:inherit; font-size:13px; font-weight:700; padding:9px 22px; cursor:pointer; transition:.15s; }
+.tour-next:hover { background:var(--v2); }
+.btn-help { width:34px; height:34px; border-radius:9px; border:1.5px solid var(--bdr); background:var(--surf); color:var(--muted); font-weight:700; font-size:15px; cursor:pointer; transition:.15s; }
+.btn-help:hover { border-color:var(--v); color:var(--v); }
+
+/* ── Доступность: видимый фокус с клавиатуры ── */
+:focus-visible { outline:2px solid var(--v2); outline-offset:2px; border-radius:6px; }
+.inp:focus, .inp:focus-visible { outline:2px solid var(--v2); outline-offset:1px; border-color:var(--v) !important; }
+.ntab:focus-visible, .tile:focus-visible, .sc-card:focus-visible, .btn:focus-visible,
+.sbtn:focus-visible, .btn-v:focus-visible, .kbtn:focus-visible, .btn-logout:focus-visible,
+.btn-help:focus-visible, .tour-next:focus-visible, .more-menu button:focus-visible { outline:2px solid var(--v2); outline-offset:2px; }
+/* мышью фокус-кольцо не мешает (только клавиатура) */
+:focus:not(:focus-visible) { outline:none; }
+
+/* ── Баннер «нет интернета» ── */
+.net-banner { position:fixed; top:0; left:0; right:0; z-index:1100; background:var(--red3); color:#fff; text-align:center; font-size:13px; font-weight:600; padding:9px 16px; box-shadow:0 2px 10px rgba(0,0,0,.2); }
+
+/* ── Модалка продления сессии ── */
+.sess-modal { position:fixed; inset:0; z-index:1050; background:rgba(20,10,40,.55); align-items:center; justify-content:center; padding:20px; }
+.sess-card { background:var(--surf); border-radius:18px; box-shadow:0 20px 60px rgba(0,0,0,.35); padding:28px 26px; max-width:360px; width:100%; text-align:center; }
+.sess-ico { font-size:40px; }
+.sess-card h3 { font-family:'DM Serif Display',serif; font-size:22px; margin:8px 0 6px; color:var(--ink); }
+.sess-card p { font-size:13px; color:var(--ink2); line-height:1.6; }
+.sess-card b { color:var(--v); font-variant-numeric:tabular-nums; }
+.sess-actions { display:flex; gap:10px; margin-top:20px; }
+.sess-actions .btn { flex:1; }
+
+/* ── Парсер: загрузка + превью ── */
+.up-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media(max-width:560px){ .up-grid { grid-template-columns:1fr; } }
+.up-zone { display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; padding:20px 16px; border:2px dashed var(--bdr); border-radius:14px; cursor:pointer; transition:.15s; background:var(--v4); }
+.up-zone:hover { border-color:var(--v); background:var(--v3); }
+.up-zone.has { border-style:solid; border-color:var(--grn); background:var(--grn2); }
+.up-zone.opt { background:var(--surf); }
+.up-ic { width:40px; height:40px; border-radius:11px; background:var(--v3); color:var(--v); display:flex; align-items:center; justify-content:center; }
+.up-zone.has .up-ic { background:#fff; color:var(--grn); }
+.up-t { font-weight:700; font-size:13px; color:var(--ink); margin-top:4px; }
+.up-s { font-size:11px; color:var(--muted); word-break:break-word; }
+.pr-head { display:flex; flex-wrap:wrap; gap:14px 20px; align-items:center; background:var(--v4); border:1px solid var(--v5); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
+.pr-src { font-size:11px; font-weight:700; color:#fff; background:var(--v); border-radius:999px; padding:5px 12px; }
+.pr-kv span { font-size:11px; color:var(--muted); display:block; }
+.pr-kv b { font-size:14px; color:var(--ink); }
+.pr-sec { font-weight:700; font-size:13px; color:var(--ink2); margin:12px 0 6px; }
+.pr-table-wrap { overflow-x:auto; border:1px solid var(--bdr); border-radius:10px; }
+.pr-table { width:100%; border-collapse:collapse; font-size:12px; min-width:520px; }
+.pr-table th { background:var(--bg2, var(--v4)); text-align:left; padding:8px 10px; font-weight:700; color:var(--ink2); white-space:nowrap; }
+.pr-table td { padding:8px 10px; border-top:1px solid var(--bdr2); }
+.pr-bad { color:var(--red3); font-weight:700; }
+.pr-st { color:var(--muted); }
+.pr-demo { background:var(--gold5); border:1px solid var(--gold3); color:var(--gold); border-radius:10px; padding:10px 14px; font-size:12px; line-height:1.5; margin-bottom:14px; }
+.consent-row { display:flex; gap:8px; align-items:flex-start; margin-top:14px; font-size:12px; color:var(--ink2); line-height:1.5; cursor:pointer; }
+.consent-row input { margin-top:2px; flex-shrink:0; width:16px; height:16px; accent-color:var(--v); }
+</style>
+</head>
+<body>
+
+<!-- ═════ HEADER ═════ -->
+<header class="hdr">
+  <div class="hdr-in">
+    <div class="brand">
+      <div class="brand-mark">📊</div>
+      <div>
+        <div class="brand-name">ОПВ Калькулятор</div>
+        <div class="brand-sub">Профессиональный расчёт взносов РК</div>
+      </div>
+    </div>
+    <div class="hdr-r">
+      <div class="sub-badge" id="subBadge">⏳ <span id="subBadgeTxt"></span></div>
+      <div class="spill" id="spill" style="display:none">
+        <div class="dot" id="dot"></div>
+        <span class="sname" id="sname"></span>
+        <span class="stimer" id="stimer"></span>
+      </div>
+      <button class="btn-help" id="btnHelp" onclick="tourStart()" title="Показать подсказки" style="display:none">?</button>
+      <button class="btn-logout" id="btnOut" onclick="doLogout()" style="display:none">Выйти</button>
+    </div>
+  </div>
+</header>
+
+<!-- ═════ NAV ═════ -->
+<div class="nav-w" id="navW" role="navigation" aria-label="Основное меню" style="display:none">
+  <div class="nav-tabs">
+    <button class="ntab on" data-tab="dash" onclick="goTab('dash')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Главная</button>
+    <button class="ntab" data-tab="opv" onclick="goTab('opv')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>Расчёт ОПВ</button>
+    <button class="ntab" data-tab="dep" onclick="goTab('dep')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></span>Депозиты</button>
+    <button class="ntab" data-tab="blank" onclick="goTab('blank')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 16h4"/></svg></span>Бланки</button>
+    <button class="ntab ntab-sec" data-tab="buh" onclick="goTab('buh')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V3z"/><path d="M9 8h6M9 12h6"/></svg></span>Бухгалтерия</button>
+    <button class="ntab ntab-sec" data-tab="sc" onclick="goTab('sc')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg></span>Сценарии</button>
+    <button class="ntab ntab-sec" data-tab="parser" onclick="goTab('parser')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span>Парсер</button>
+    <button class="ntab ntab-sec" data-tab="hist" onclick="goTab('hist')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/><path d="M12 8v4.5l3 1.8"/></svg></span>История<span class="nbadge" id="histBadge"></span></button>
+    <div class="nav-more">
+      <button class="ntab nmore-btn" onclick="toggleMore(event)"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg></span>Ещё</button>
+      <div class="more-menu" id="moreMenu">
+        <button onclick="goTab('buh')">Бухгалтерия</button>
+        <button onclick="goTab('sc')">Сценарии</button>
+        <button onclick="goTab('parser')">Парсер ПКБ/ГКБ</button>
+        <button onclick="goTab('hist')">История</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main" role="main">
+
+<!-- ═════ LOGIN ═════ -->
+<div id="vLogin" class="login-page">
+  <div class="login-card">
+    <div class="login-badge">🔐 Безопасный вход</div>
+    <h1 class="login-h">Единый сервис</h1>
+    <p class="login-s">Ипотека, депозиты, бланки и расчёты — в одном месте, по одному ключу</p>
+    <div class="fl">
+      <label class="lb" for="keyInp">Ключ доступа</label>
+      <input class="inp" id="keyInp" type="password" placeholder="Введите ключ доступа...">
+    </div>
+    <button class="btn btn-v" id="btnLogin" onclick="doLogin()">Войти</button>
+    <div class="msg" id="loginMsg"></div>
+    <div class="login-feats">
+      <span class="chip"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 14l4-4 3 3 5-6"/></svg>ОПВ и ипотека</span>
+      <span class="chip"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>Депозиты</span>
+      <span class="chip"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg>Бланки</span>
+    </div>
+    <div class="login-ft">Ключ доступа выдаётся администратором</div>
+  </div>
+</div>
+
+<!-- ═════ PAYWALL (подписка истекла) ═════ -->
+<div id="vPay" class="paywall" style="display:none">
+  <div class="paywall-card">
+    <div class="paywall-ico">🔒</div>
+    <h2>Подписка неактивна</h2>
+    <p id="payReason">Срок вашей подписки истёк.</p>
+    <div class="paywall-price"><span id="payPrice">25 000</span> ₸ <span style="font-size:15px;color:var(--muted)">/ мес</span></div>
+    <div class="paywall-kaspi">
+      <div class="row">
+        <span>Оплата на Kaspi:</span>
+        <span class="kaspi-phone-cell"><b id="payKaspiPhone">+7 771 128 51 35</b>
+          <button class="kbtn" id="btnCopyKaspi" onclick="copyKaspi()">Копировать</button></span>
+      </div>
+      <div class="row"><span>Получатель:</span><b id="payKaspiName">Салихалы</b></div>
+      <div class="row"><span>Ваш ключ:</span><b id="payKey">—</b></div>
+    </div>
+    <img id="payQr" class="pay-qr" alt="QR для оплаты в Kaspi" style="display:none">
+    <ol class="paywall-steps">
+      <li>Переведите сумму на Kaspi по номеру выше.</li>
+      <li>Нажмите «Я оплатил» — откроется WhatsApp с готовым сообщением и вашим ключом.</li>
+      <li>Доступ активируют вручную в течение дня.</li>
+    </ol>
+    <div class="pay-actions">
+      <a class="btn btn-v" id="btnPaid" target="_blank" rel="noopener">✅ Я оплатил — WhatsApp</a>
+      <button class="btn btn-ghost" onclick="doLogout()">Выйти</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═════ ГЛАВНАЯ (дашборд) ═════ -->
+<div id="vDash" class="panel" style="display:none">
+  <div class="dash-hero">
+    <h2>Здравствуйте<span id="dashName"></span></h2>
+    <p>Выберите инструмент — всё в одном сервисе под вашей подпиской</p>
+  </div>
+  <div class="dash-status" id="dashStatus" style="display:none"></div>
+  <div class="dash-grid">
+    <button class="tile" onclick="goTab('opv')">
+      <span class="tile-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
+      <b>Расчёт ОПВ</b><small>Средняя зарплата по взносам, план до цели</small></button>
+    <button class="tile" onclick="goTab('dep')">
+      <span class="tile-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></span>
+      <b>Депозиты</b><small>Калькулятор вознаграждения, дата цели</small></button>
+    <button class="tile" onclick="goTab('blank')">
+      <span class="tile-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 16h4"/></svg></span>
+      <b>Бланки переуступки</b><small>Готовые бланки по возрасту ребёнка</small></button>
+    <button class="tile" onclick="goTab('buh')">
+      <span class="tile-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V3z"/><path d="M9 8h6M9 12h6"/></svg></span>
+      <b>Бухгалтерия</b><small>Налоги и сумма «к бухгалтеру»</small></button>
+    <button class="tile" onclick="goTab('sc')">
+      <span class="tile-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg></span>
+      <b>Сценарии</b><small>Сколько ОПВ нужно до нужной зарплаты</small></button>
+    <button class="tile" onclick="goTab('parser')">
+      <span class="tile-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span>
+      <b>Парсер ПКБ/ГКБ</b><small>PDF-отчёт → готовая Excel-анкета</small></button>
+  </div>
+</div>
+
+<!-- ═════ РАСЧЁТ ОПВ ═════ -->
+<div id="vOpv" class="panel" style="display:none">
+
+  <!-- Режим -->
+  <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px">
+    <div>
+      <div style="font-family:'DM Serif Display',serif;font-size:21px;letter-spacing:-.3px">Расчёт средней зарплаты</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">Введите ОПВ — результат обновится автоматически</div>
+    </div>
+    <div class="seg" style="flex-shrink:0">
+      <button class="sbtn on" id="mVar" onclick="setMode('var')">📅 Разные ОПВ</button>
+      <button class="sbtn"    id="mEq"  onclick="setMode('eq')">🔄 Одинаковые</button>
+    </div>
+  </div>
+
+  <!-- VAR -->
+  <div id="sVar">
+    <div class="g3">
+      <!-- Ввод ОПВ -->
+      <div>
+        <div class="card">
+          <div class="ch"><div class="ci" style="background:var(--v3)">📅</div><div class="ct">ОПВ по месяцам</div></div>
+          <div class="cb">
+            <div class="mgrid" id="opvGrid"></div>
+            <button class="btn-ghost btn" onclick="clearOPV()" style="margin-top:10px;font-size:12px;padding:8px">✕ Очистить поля</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Центр: результат + цель -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="ch"><div class="ci" style="background:var(--v3)">📊</div><div class="ct">Средняя зарплата</div></div>
+          <div class="cb">
+            <div class="avg-box" id="varAvgBox">
+              <div>
+                <div class="avg-lbl">Средняя зарплата (ЕНПФ)</div>
+                <div class="avg-num" id="varAvg">—</div>
+              </div>
+              <div class="avg-ico">💜</div>
+            </div>
+            <div class="live-bar" id="varLive"><div class="ldot"></div><span id="varLiveTxt">Ожидание ввода</span></div>
+          </div>
+        </div>
+
+        <!-- Целевая ЗП -->
+        <div class="card">
+          <div class="ch"><div class="ci" style="background:var(--gold4)">🎯</div><div class="ct">Целевая зарплата</div></div>
+          <div class="cb">
+            <div class="fl">
+              <label class="lb">Желаемая зарплата (₸)</label>
+              <div class="inp-wrap">
+                <input class="inp gold" id="varTarget" type="number" inputmode="numeric" placeholder="например 500 000...">
+              </div>
+            </div>
+            <p style="font-size:11px;color:var(--muted);margin-top:5px">Покажем сколько ОПВ нужно за 1–6 месяцев</p>
+            <div class="tgt-wrap" id="varTgt">
+              <div class="tgt-head"><span style="font-size:15px">🎯</span><span class="tgt-ht" id="varTgtTitle">До цели</span></div>
+              <div class="tgt-body" id="varTgtBody"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Правая: итог + действия -->
+      <div class="sticky">
+        <div class="card" id="varRightCard">
+          <div class="cb">
+            <div class="empty" id="varRightEmpty">
+              <div class="eico">👆</div>
+              <p>Введите ОПВ хотя бы<br>за один месяц</p>
+            </div>
+            <div id="varRightResult" style="display:none">
+              <div class="avg-box" style="margin-top:0">
+                <div><div class="avg-lbl">Итог</div><div class="avg-num" id="varRightAvg">—</div></div>
+                <div class="avg-ico">✅</div>
+              </div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.8" id="varRightMeta"></div>
+              <div class="action-bar">
+                <button class="a-btn" onclick="copyResult('var')">📋 Скопировать</button>
+                <button class="a-btn" onclick="openPdf('var')">📄 PDF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EQ -->
+  <div id="sEq" style="display:none">
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><div class="ci" style="background:var(--v3)">🔄</div><div class="ct">Параметры дохода</div></div>
+        <div class="cb">
+          <div class="fl">
+            <label class="lb">Необходимый доход (₸)</label>
+            <input class="inp" id="eqIncome" type="number" inputmode="numeric" placeholder="500 000">
+          </div>
+          <div class="fl">
+            <label class="lb">Количество месяцев</label>
+            <div class="seg">
+              <button class="sbtn" id="em3" onclick="setMonths(3)" aria-label="3 месяца">3</button>
+              <button class="sbtn" id="em4" onclick="setMonths(4)" aria-label="4 месяца">4</button>
+              <button class="sbtn" id="em5" onclick="setMonths(5)" aria-label="5 месяцев">5</button>
+              <button class="sbtn" id="em6" onclick="setMonths(6)" aria-label="6 месяцев">6</button>
+            </div>
+          </div>
+          <div class="live-bar" id="eqLive"><div class="ldot"></div><span id="eqLiveTxt">Ожидание ввода</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ci" style="background:var(--v3)">📊</div><div class="ct">Результат</div></div>
+        <div class="cb">
+          <div class="avg-box" id="eqAvgBox" style="display:none">
+            <div><div class="avg-lbl">Средняя зарплата</div><div class="avg-num" id="eqAvg">—</div></div>
+            <div class="avg-ico">💜</div>
+          </div>
+          <div id="eqPayWrap" style="display:none">
+            <label class="lb" style="margin-bottom:8px">Ежемесячные платежи ОПВ</label>
+            <div class="pay-grid" id="eqPayGrid"></div>
+          </div>
+          <div id="eqEmpty" class="empty"><div class="eico">🔄</div><p>Введите доход и выберите месяцы</p></div>
+          <div class="action-bar" id="eqActions" style="display:none">
+            <button class="a-btn" onclick="copyResult('eq')">📋 Скопировать</button>
+            <button class="a-btn" onclick="openPdf('eq')">📄 PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /vOpv -->
+
+<!-- ═════ БУХГАЛТЕРИЯ ═════ -->
+<div id="vBuh" class="panel" style="display:none">
+  <div class="hero">
+    <div class="hero-ico"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V3z"/><path d="M9 8h6M9 12h6"/></svg></div>
+    <div><h2>Разбивка для бухгалтера</h2><p>Введите зарплату и тип договора — получите полный расчёт налогов</p></div>
+  </div>
+  <div class="g2">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="ch"><div class="ci" style="background:var(--v3)">⚙️</div><div class="ct">Параметры расчёта</div></div>
+        <div class="cb">
+          <div class="fl">
+            <label class="lb">Тип договора</label>
+            <div class="seg">
+              <button class="sbtn" id="bT" onclick="setBuhType('Трудовой')">💼 Трудовой</button>
+              <button class="sbtn" id="bG" onclick="setBuhType('ГПХ')">📄 ГПХ</button>
+            </div>
+          </div>
+          <div class="fl">
+            <label class="lb">Зарплата (₸)</label>
+            <input class="inp gold" id="buhSal" type="number" inputmode="numeric" placeholder="Введите сумму...">
+          </div>
+          <div class="live-bar" id="buhLive"><div class="ldot"></div><span id="buhLiveTxt">Ожидание ввода</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="cb" style="font-size:12px;color:var(--muted);line-height:1.75">
+          <div style="font-weight:700;color:var(--ink2);margin-bottom:8px">📌 Трудовой vs ГПХ</div>
+          <div><strong style="color:var(--v)">Трудовой:</strong> ОПВ + ВОСМС + СО + ИПН + ОПВР + ООСМС + работа</div>
+          <div style="margin-top:5px"><strong style="color:var(--gold)">ГПХ:</strong> ОПВ + ВОСМС + СО + ИПН + работа<br>ОПВР и ООСМС не начисляются</div>
+        </div>
+      </div>
+    </div>
+    <div class="sticky">
+      <div class="card">
+        <div class="cb" id="buhRes">
+          <div class="empty"><div class="eico">🧾</div><p>Выберите тип и введите<br>зарплату</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════ СЦЕНАРИИ ═════ -->
+<div id="vSc" class="panel" style="display:none">
+  <div class="hero">
+    <div class="hero-ico"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg></div>
+    <div><h2>Финансовые сценарии</h2><p>Готовые расчёты для типовых ситуаций — выберите нужный</p></div>
+  </div>
+
+  <div class="scenario-grid">
+    <div class="sc-card" id="scC1" role="button" tabindex="0" onclick="selectScenario('target')" onkeydown="scKey(event,this)">
+      <div class="sc-ico" aria-hidden="true">💰</div>
+      <div class="sc-name">Целевая зарплата</div>
+      <div class="sc-desc">Хочу получить нужную среднюю ЗП. Покажи план ОПВ на 1–6 месяцев</div>
+    </div>
+    <div class="sc-card" id="scC2" role="button" tabindex="0" onclick="selectScenario('approval')" onkeydown="scKey(event,this)">
+      <div class="sc-ico" aria-hidden="true">🏦</div>
+      <div class="sc-name">Одобрение ипотеки</div>
+      <div class="sc-desc">Покажи что нужно сделать чтобы одобрили ипотеку с нужной ЗП</div>
+    </div>
+    <div class="sc-card" id="scC3" role="button" tabindex="0" onclick="selectScenario('minimal')" onkeydown="scKey(event,this)">
+      <div class="sc-ico" aria-hidden="true">⚡</div>
+      <div class="sc-name">Минимальные затраты</div>
+      <div class="sc-desc">Найди оптимальный план ОПВ с минимальными вложениями</div>
+    </div>
+  </div>
+
+  <!-- Ввод для сценария -->
+  <div id="scInputWrap" style="display:none">
+    <div class="sc-target-input">
+      <div class="fl">
+        <label class="lb" id="scInputLabel">Целевая зарплата (₸)</label>
+        <input class="inp gold" id="scTarget" type="number" inputmode="numeric" placeholder="300 000">
+      </div>
+      <div class="fl" style="min-width:140px">
+        <label class="lb">Тип договора</label>
+        <div class="seg">
+          <button class="sbtn" id="scBT" onclick="setScType('Трудовой')">Трудовой</button>
+          <button class="sbtn" id="scBG" onclick="setScType('ГПХ')">ГПХ</button>
+        </div>
+      </div>
+      <button class="btn btn-gold" style="width:auto;padding:11px 20px;margin:0;align-self:flex-end" onclick="runScenario()">Рассчитать</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:14px">ОПВ из вкладки "Расчёт ОПВ" будут учтены автоматически</p>
+  </div>
+
+  <!-- Результат сценария -->
+  <div class="card" id="scResult" style="display:none">
+    <div class="cb" id="scResultBody"></div>
+  </div>
+</div>
+
+<!-- ═════ ИСТОРИЯ ═════ -->
+<div id="vHist" class="panel" style="display:none">
+  <div class="hero">
+    <div class="hero-ico"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/><path d="M12 8v4.5l3 1.8"/></svg></div>
+    <div><h2>История расчётов</h2><p>Последние 30 операций вашего аккаунта</p></div>
+  </div>
+  <div id="histContent">
+    <div class="empty"><div class="eico"><span class="spin dark"></span></div><p>Загружаем историю...</p></div>
+  </div>
+</div>
+
+<!-- ═════ ДЕПОЗИТЫ (калькулятор вознаграждения) ═════ -->
+<div id="vDep" class="panel" style="display:none">
+  <div class="hero">
+    <div class="hero-ico"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></div>
+    <div><h2>Калькулятор вознаграждения по депозитам</h2><p>Ставка 2% годовых · капитализация в последний рабочий день месяца</p></div>
+  </div>
+  <div class="tool-frame-wrap">
+    <div id="depLoading" class="tool-skeleton"><div class="sk sk-1"></div><div class="sk sk-2"></div><div class="sk sk-3"></div></div>
+    <iframe id="depFrame" class="tool-frame" style="display:none" title="Калькулятор депозитов"></iframe>
+  </div>
+</div>
+
+<!-- ═════ БЛАНКИ ПЕРЕУСТУПКИ ═════ -->
+<div id="vBlank" class="panel" style="display:none">
+  <div class="hero">
+    <div class="hero-ico"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 16h4"/></svg></div>
+    <div><h2>Бланки переуступки депозита</h2><p>«Баланың депозитін табыстау» · по возрасту ребёнка · готово к печати</p></div>
+  </div>
+  <div style="margin-bottom:12px">
+    <button class="btn btn-v" style="width:auto;padding:11px 20px;margin:0" onclick="printBlanks()">🖨️ Распечатать / Сохранить PDF</button>
+  </div>
+  <div class="tool-frame-wrap">
+    <div id="blankLoading" class="tool-skeleton"><div class="sk sk-1"></div><div class="sk sk-2"></div><div class="sk sk-3"></div></div>
+    <iframe id="blankFrame" class="tool-frame" style="display:none;min-height:900px" title="Бланки переуступки"></iframe>
+  </div>
+</div>
+
+<!-- ═════ ПАРСЕР ПКБ/ГКБ (десктоп) ═════ -->
+<div id="vParser" class="panel" style="display:none">
+  <div class="hero">
+    <div class="hero-ico"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></div>
+    <div><h2>Парсер кредитных отчётов ПКБ / ГКБ</h2><p>Программа для менеджеров: PDF-отчёт → готовая Excel-анкета</p></div>
+  </div>
+  <div class="card">
+    <div class="cb">
+      <p style="margin-bottom:14px;color:var(--ink2);line-height:1.7;font-size:13px">
+        Загрузите PDF кредитного отчёта (<b>ПКБ / 1cb.kz</b> или <b>ГКБ·МКБ / mkb.kz</b>) — сервис распознает
+        договоры, суммы, платежи, просрочки и цессии, покажет превью и отдаст готовую Excel-анкету.
+      </p>
+      <div class="up-grid">
+        <label class="up-zone" id="upCredit">
+          <input type="file" accept="application/pdf" id="fileCredit" onchange="onFilePick(this,'credit')" hidden>
+          <span class="up-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 16h4"/></svg></span>
+          <span class="up-t">Кредитный отчёт PDF</span>
+          <span class="up-s" id="upCreditName">Нажмите или перетащите файл · обязательно</span>
+        </label>
+        <label class="up-zone opt" id="upPension">
+          <input type="file" accept="application/pdf" id="filePension" onchange="onFilePick(this,'pension')" hidden>
+          <span class="up-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
+          <span class="up-t">Пенсионная выписка ЕНПФ</span>
+          <span class="up-s" id="upPensionName">Необязательно · для средней зарплаты</span>
+        </label>
+      </div>
+      <label class="consent-row">
+        <input type="checkbox" id="consentChk">
+        <span>Клиент дал согласие на обработку своих персональных данных (кредитный отчёт). Файл используется только для формирования анкеты и не сохраняется.</span>
+      </label>
+      <button class="btn btn-v" id="btnParse" style="margin-top:12px" onclick="doParse()">Распознать отчёт</button>
+      <div class="msg" id="parseMsg"></div>
+
+      <div id="parseResult" style="display:none;margin-top:18px"></div>
+
+      <p style="font-size:11px;color:var(--muted);margin-top:14px;border-top:1px solid var(--bdr);padding-top:12px">
+        🔒 Файл обрабатывается на сервере и не сохраняется. Для полностью локальной обработки (данные не покидают компьютер) и работы пачками —
+        <a href="#" id="parserDownloadBtn" style="color:var(--v);font-weight:600">десктоп-версия</a>.
+      </p>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ═════ ОНБОРДИНГ-ТУР ═════ -->
+<div id="tour" class="tour" style="display:none">
+  <div id="tourSpot" class="tour-spot"></div>
+  <div id="tourPop" class="tour-pop">
+    <div class="tour-step" id="tourStep"></div>
+    <div class="tour-t" id="tourTitle"></div>
+    <div class="tour-d" id="tourText"></div>
+    <div class="tour-nav">
+      <button class="tour-skip" onclick="tourEnd()">Пропустить</button>
+      <button class="tour-next" id="tourNextBtn" onclick="tourNext()">Далее</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═════ БАННЕР «НЕТ ИНТЕРНЕТА» ═════ -->
+<div id="netBanner" class="net-banner" role="alert" style="display:none">
+  ⚠ Нет интернета — вход и расчёты недоступны. Проверьте соединение.
+</div>
+
+<!-- ═════ МОДАЛКА ПРОДЛЕНИЯ СЕССИИ ═════ -->
+<div id="sessModal" class="sess-modal" style="display:none">
+  <div class="sess-card">
+    <div class="sess-ico">⏳</div>
+    <h3>Вы ещё здесь?</h3>
+    <p>Сессия завершится через <b id="sessCount">60</b> сек. из-за неактивности. Продолжить работу?</p>
+    <div class="sess-actions">
+      <button class="btn btn-v" onclick="extendSession()">Продолжить работу</button>
+      <button class="btn btn-ghost" onclick="doLogout()">Выйти</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═════ PDF MODAL ═════ -->
+<div class="overlay" id="pdfOverlay" onclick="closePdf(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div class="modal-title">📄 Предварительный просмотр PDF</div>
+      <button class="modal-close" onclick="closePdf()" aria-label="Закрыть">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="pdf-preview" id="pdfContent"></div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-v" onclick="doPrintPdf()">🖨️ Скачать / Распечатать</button>
+        <button class="btn btn-ghost" onclick="closePdf()">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONSTANTS & STATE
+// ═══════════════════════════════════════════
+var TK='opv_tk', DK='opv_dk', SK='opv_save';
+var SESSION_MS=30*60*1000, WARN_MS=5*60*1000;
+
+var token   = localStorage.getItem(TK);
+var lastAct = Date.now();
+var timerItv= null;
+
+var S = {
+  buhType:'', scType:'Трудовой', scScenario:'',
+  eqMonths:0, mode:'var',
+  lastVarResult: null,
+  lastEqResult: null,
+  lastBuhResult: null,
+  clientName: ''
+};
+
+var MNAMES = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+
+// Debounce timers
+var varTimer=null, eqTimer=null, buhTimer=null;
+var DEBOUNCE=400;
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+function devId(){
+  var d=localStorage.getItem(DK);
+  if(!d){d='D-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8).toUpperCase();localStorage.setItem(DK,d);}
+  return d;
+}
+function el(id){return document.getElementById(id);}
+function fmt(n){if(n===null||n===undefined)return'—';var x=Number(n);return isFinite(x)?x.toLocaleString('ru-RU')+' ₸':String(n);}
+function fmtN(n){if(!n)return'0';return Number(n).toLocaleString('ru-RU');}
+
+// Count-up анимация цифр (уважает prefers-reduced-motion; гарантирует финал даже без rAF)
+function animateNum(id, value){
+  var e=el(id); if(!e) return;
+  var target=Number(value); if(!isFinite(target)){ e.textContent=fmt(value); return; }
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce){ e.textContent=fmt(target); return; }
+  var start=parseFloat((e.textContent||'').replace(/[^\d.-]/g,''))||0;
+  if(start===target){ e.textContent=fmt(target); return; }
+  var t0=null, dur=600, done=false;
+  function finish(){ if(done) return; done=true; e.textContent=fmt(target); }
+  (function step(t){
+    if(done) return;
+    if(t0===null) t0=t;
+    var p=Math.min(1,(t-t0)/dur), ease=1-Math.pow(1-p,3);
+    e.textContent=fmt(Math.round(start+(target-start)*ease));
+    if(p<1) requestAnimationFrame(step); else finish();
+  })(performance.now());
+  setTimeout(finish, dur+180);   // страховка: если rAF не идёт (свёрнутая вкладка) — ставим финал
+}
+
+function showMsg(id,txt,k){var e=el(id);e.className='msg on'+(k?' '+k:'');e.textContent=txt;}
+function hideMsg(id){el(id).className='msg';}
+
+function setLive(id,txtId,state,txt){
+  var b=el(id);if(!b)return;
+  b.className='live-bar '+(state||'');
+  if(txtId&&txt) el(txtId).textContent=txt;
+}
+
+// ═══════════════════════════════════════════
+//  AUTO-SAVE / RESTORE
+// ═══════════════════════════════════════════
+function saveState(){
+  try{
+    var data={
+      mode:S.mode, buhType:S.buhType,
+      eqMonths:S.eqMonths, scType:S.scType,
+      varTarget:el('varTarget')?el('varTarget').value:'',
+      eqIncome:el('eqIncome')?el('eqIncome').value:'',
+      buhSal:el('buhSal')?el('buhSal').value:'',
+      opv:[], ts:Date.now()
+    };
+    for(var i=1;i<=12;i++){var e=el('opv'+i);data.opv.push(e?e.value:'');}
+    localStorage.setItem(SK,JSON.stringify(data));
+  }catch(e){}
+}
+
+function restoreState(){
+  try{
+    var raw=localStorage.getItem(SK);
+    if(!raw)return;
+    var d=JSON.parse(raw);
+    if(Date.now()-d.ts>86400000)return; // старше суток — не восстанавливаем
+    if(d.mode) setMode(d.mode);
+    if(d.buhType) setBuhType(d.buhType);
+    if(d.eqMonths) setMonths(d.eqMonths);
+    if(d.scType) setScType(d.scType);
+    if(d.varTarget&&el('varTarget')) el('varTarget').value=d.varTarget;
+    if(d.eqIncome&&el('eqIncome'))  el('eqIncome').value=d.eqIncome;
+    if(d.buhSal&&el('buhSal'))      el('buhSal').value=d.buhSal;
+    if(d.opv) d.opv.forEach(function(v,i){var e=el('opv'+(i+1));if(e&&v)e.value=v;});
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════
+//  SESSION UI
+// ═══════════════════════════════════════════
+function _resetPanels(){
+  ['vDash','vOpv','vBuh','vSc','vHist','vDep','vBlank','vParser'].forEach(function(id){
+    var e=el(id); if(e){ e.style.display='none'; e.classList.remove('on'); }
+  });
+  document.querySelectorAll('.ntab').forEach(function(t){ t.classList.remove('on'); });
+  closeMore();
+}
+
+function setUI(on, name){
+  S.clientName=name||'';
+  _resetPanels();
+  el('vPay').style.display='none';
+  el('vLogin').style.display=on?'none':'';
+  el('navW').style.display=on?'block':'none';
+  el('spill').style.display=on?'flex':'none';
+  el('btnOut').style.display=on?'block':'none';
+  if(el('btnHelp')) el('btnHelp').style.display=on?'block':'none';
+  if(on){
+    el('dot').className='dot on';
+    el('sname').textContent=name||'';
+    if(el('dashName')) el('dashName').textContent = name ? (', '+name) : '';
+    lastAct=Date.now(); startTimer();
+    restoreState();
+    goTab('dash');            // приземляемся на дашборд
+    scheduleVarCalc();
+    maybeTour();              // тур для новых — при первом входе
+  } else {
+    el('dot').className='dot';
+    el('subBadge').style.display='none';
+    clearInterval(timerItv); timerItv=null;
+  }
+}
+
+// ── Подписка: бейдж и экран оплаты ──────────────────────────
+function setSubBadge(daysLeft){
+  var b=el('subBadge');
+  // Карточка статуса на дашборде
+  var ds=el('dashStatus');
+  if(ds){
+    ds.style.display='flex';
+    if(daysLeft===null||daysLeft===undefined){
+      ds.className='dash-status ok';
+      ds.innerHTML='<div class="ds-ico">✓</div><div><div class="ds-t">Подписка активна</div><div class="ds-s">Доступны все инструменты сервиса</div></div>';
+    } else {
+      var lvl = daysLeft<=3?'crit':(daysLeft<=7?'warn':'ok');
+      ds.className='dash-status '+lvl;
+      var word = daysLeft%10===1&&daysLeft%100!==11?'день':((daysLeft%10>=2&&daysLeft%10<=4)&&!(daysLeft%100>=12&&daysLeft%100<=14)?'дня':'дней');
+      ds.innerHTML='<div class="ds-num">'+Math.max(0,daysLeft)+'</div><div><div class="ds-t">'+(daysLeft>0?('осталось '+word+' подписки'):'подписка истекает сегодня')+'</div><div class="ds-s">'+(lvl!=='ok'?'Не забудьте продлить, чтобы не потерять доступ':'Всё в порядке — доступ активен')+'</div></div>';
+    }
+  }
+  if(daysLeft===null||daysLeft===undefined){ b.style.display='none'; return; }
+  b.style.display='flex';
+  el('subBadgeTxt').textContent = daysLeft>0
+    ? ('Подписка: '+daysLeft+' дн.')
+    : 'Подписка истекает сегодня';
+  b.className='sub-badge'+(daysLeft<=3?' crit':(daysLeft<=7?' warn':''));
+}
+
+function showPaywall(info){
+  info=info||{};
+  _resetPanels();
+  el('vLogin').style.display='none';
+  el('navW').style.display='none';
+  el('vOpv').style.display='none';
+  el('spill').style.display='none';
+  el('btnOut').style.display='block';
+  el('subBadge').style.display='none';
+  el('vPay').style.display='block';
+  el('payReason').textContent=info.message||'Срок вашей подписки истёк.';
+  el('payKaspiPhone').textContent=info.kaspiPhone||'+7 771 128 51 35';
+  el('payKaspiName').textContent=info.kaspiName||'—';
+  el('payKey').textContent=info.key||el('keyInp').value.trim()||'—';
+  if(el('payPrice')&&info.price) el('payPrice').textContent=Number(info.price).toLocaleString('ru-RU');
+
+  // Кнопка «Я оплатил → WhatsApp» с готовым сообщением
+  var phone=(info.kaspiPhone||el('payKaspiPhone').textContent||'').replace(/\D/g,'');
+  var wa=(info.whatsapp||phone||'').replace(/\D/g,'');
+  var key=el('payKey').textContent;
+  var price=el('payPrice').textContent;
+  var msg='Здравствуйте! Оплатил(а) подписку '+price+' ₸ на Kaspi. Мой ключ: '+key+'. Прошу активировать доступ.';
+  var paid=el('btnPaid');
+  if(paid){
+    if(wa){ paid.href='https://wa.me/'+wa+'?text='+encodeURIComponent(msg); paid.style.display='flex'; }
+    else { paid.style.display='none'; }
+  }
+  // QR (если задан): info.kaspiQr — ссылка/data-URI на картинку QR
+  var qr=el('payQr');
+  if(qr){
+    if(info.kaspiQr){ qr.src=info.kaspiQr; qr.style.display='block'; }
+    else { qr.style.display='none'; }
+  }
+}
+
+function copyKaspi(){
+  var num=(el('payKaspiPhone').textContent||'').replace(/\s/g,'');
+  var btn=el('btnCopyKaspi');
+  function ok(){ if(btn){ btn.textContent='Скопировано ✓'; btn.classList.add('done'); setTimeout(function(){ btn.textContent='Копировать'; btn.classList.remove('done'); },2000); } }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(num).then(ok,ok); }
+  else { try{ var t=document.createElement('textarea'); t.value=num; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); }catch(e){} ok(); }
+}
+
+function startTimer(){ clearInterval(timerItv); timerItv=setInterval(tick,1000); }
+function tick(){
+  if(!token){clearInterval(timerItv);return;}
+  var rem=SESSION_MS-(Date.now()-lastAct);
+  if(rem<=0){ hideSessModal(); autoLogout(); return; }
+  var t=el('stimer');
+  var m=Math.floor(rem/60000),s=Math.floor((rem%60000)/1000);
+  t.textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  t.className='stimer'+(rem<WARN_MS?' warn':'');
+  // мягкое продление: за 60с показываем модалку вместо резкого выхода
+  if(rem<=60000){ var sm=el('sessModal'); if(sm){ sm.style.display='flex'; el('sessCount').textContent=Math.ceil(rem/1000); } }
+  else { hideSessModal(); }
+}
+function hideSessModal(){ var m=el('sessModal'); if(m) m.style.display='none'; }
+function extendSession(){ lastAct=Date.now(); hideSessModal(); }
+
+['click','keydown','input','touchstart'].forEach(function(ev){
+  document.addEventListener(ev,function(){lastAct=Date.now();},{passive:true});
+});
+
+// Индикатор «нет интернета»
+function showNetBanner(){ var b=el('netBanner'); if(b) b.style.display='block'; }
+function hideNetBanner(){ var b=el('netBanner'); if(b) b.style.display='none'; }
+window.addEventListener('offline', showNetBanner);
+window.addEventListener('online', hideNetBanner);
+if(!navigator.onLine) showNetBanner();
+
+function autoLogout(){
+  var t=token;token=null;localStorage.removeItem(TK);
+  clearInterval(timerItv);timerItv=null;setUI(false);
+  if(t)google.script.run.apiLogout(t);
+}
+
+// ═══════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════
+function doLogin(){
+  var key=el('keyInp').value.trim();
+  if(!key){showMsg('loginMsg','Введите ключ доступа','err');return;}
+  var btn=el('btnLogin');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>Входим...';
+  showMsg('loginMsg','Подключаемся...','warn');
+  google.script.run
+    .withSuccessHandler(function(r){
+      btn.disabled=false;btn.textContent='Войти';
+      if(r.ok){
+        token=r.token;localStorage.setItem(TK,token);
+        setUI(true,r.clientName);setSubBadge(r.daysLeft);
+        applyParserUrl(r.parserUrl);
+        el('keyInp').value='';hideMsg('loginMsg');
+      } else if(r.expired){
+        showPaywall(r);
+      } else {
+        showMsg('loginMsg',r.message||'Неверный ключ','err');
+      }
+    })
+    .withFailureHandler(function(e){btn.disabled=false;btn.textContent='Войти';showMsg('loginMsg', navigator.onLine?('Ошибка: '+(e&&e.message||e)):'Нет связи с сервером. Проверьте интернет и повторите.','err');})
+    .apiLogin(el('keyInp').value.trim(),devId());
+}
+
+function doLogout(){
+  var t=token;token=null;localStorage.removeItem(TK);
+  clearInterval(timerItv);timerItv=null;setUI(false);
+  if(t)google.script.run.apiLogout(t);
+}
+
+el('keyInp').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+// ═══════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════
+var PANELS = {dash:'vDash',opv:'vOpv',buh:'vBuh',sc:'vSc',hist:'vHist',dep:'vDep',blank:'vBlank',parser:'vParser'};
+
+function goTab(name){
+  document.querySelectorAll('.ntab').forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-tab')===name); });
+  Object.values(PANELS).forEach(function(id){var e=el(id); if(e){e.style.display='none';e.classList.remove('on');}});
+  var p=el(PANELS[name]); if(!p) return;
+  p.style.display='block'; p.classList.add('on');
+  closeMore();
+  try{ window.scrollTo(0,0); }catch(e){}
+  if(name==='hist') loadHistory();
+  if(name==='dep')  loadTool('DepositCalc','depFrame','depLoading');
+  if(name==='blank')loadTool('DepositBlanks','blankFrame','blankLoading');
+}
+
+function toggleMore(e){ if(e){e.stopPropagation();} var m=el('moreMenu'); if(m) m.classList.toggle('open'); }
+function closeMore(){ var m=el('moreMenu'); if(m) m.classList.remove('open'); }
+document.addEventListener('click', function(e){ if(!e.target.closest('.nav-more')) closeMore(); });
+
+// ═══════════════════════════════════════════
+//  ОНБОРДИНГ-ТУР
+// ═══════════════════════════════════════════
+var TOUR=[
+  {sel:'#dashStatus', t:'Ваша подписка', d:'Здесь видно, сколько дней осталось до конца подписки. Продлевайте вовремя, чтобы не потерять доступ.'},
+  {sel:'.dash-grid',  t:'Инструменты',   d:'Плитки — быстрый переход к любому инструменту: расчёт ОПВ, депозиты, бланки и другое.'},
+  {sel:'.nav-tabs',   t:'Верхнее меню',  d:'Переключайтесь между инструментами в любой момент. На телефоне лишние вкладки — под кнопкой «Ещё».'},
+  {sel:'#btnOut',     t:'Выход',         d:'Кнопка выхода. Ваш ключ привязан к этому устройству — на другом компьютере войти по нему не получится.'}
+];
+var tourI=0;
+function tourStart(){ if(!el('navW')||el('navW').style.display==='none') return; goTab('dash'); tourI=0; el('tour').style.display='block'; setTimeout(tourShow,60); }
+function tourShow(){
+  var s=TOUR[tourI], t=document.querySelector(s.sel);
+  if(!t){ return tourNext(); }
+  try{ t.scrollIntoView({block:'center'}); }catch(e){}
+  var r=t.getBoundingClientRect(), pad=8, spot=el('tourSpot');
+  spot.style.top=(r.top-pad)+'px'; spot.style.left=(r.left-pad)+'px';
+  spot.style.width=(r.width+pad*2)+'px'; spot.style.height=(r.height+pad*2)+'px';
+  el('tourTitle').textContent=s.t; el('tourText').textContent=s.d;
+  el('tourStep').textContent='ШАГ '+(tourI+1)+' ИЗ '+TOUR.length;
+  el('tourNextBtn').textContent=(tourI===TOUR.length-1)?'Понятно':'Далее';
+  var pop=el('tourPop'), top=r.bottom+16;
+  if(top+200>window.innerHeight) top=Math.max(16, r.top-212);
+  pop.style.top=top+'px';
+  pop.style.left=Math.min(Math.max(16, r.left), Math.max(16, window.innerWidth-306))+'px';
+}
+function tourNext(){ tourI++; if(tourI>=TOUR.length) return tourEnd(); tourShow(); }
+function tourEnd(){ el('tour').style.display='none'; try{ localStorage.setItem('onb_done','1'); }catch(e){} }
+function maybeTour(){ try{ if(!localStorage.getItem('onb_done')) setTimeout(tourStart, 750); }catch(e){} }
+
+// Клавиатура для кликабельных карточек (Enter/Пробел)
+function scKey(e, elm){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); elm.click(); } }
+
+// ═══════════════════════════════════════════
+//  ПАРСЕР ПКБ/ГКБ (онлайн, Cloud Run)
+// ═══════════════════════════════════════════
+var PARSER_API = 'https://opv-three.vercel.app';
+var _parseFiles = {credit:null, pension:null};
+var _parseExcel = null, _parseName = 'anketa.xlsx';
+
+function onFilePick(input, kind){
+  var f = input.files && input.files[0];
+  _parseFiles[kind] = f || null;
+  var lbl = kind==='credit' ? 'upCreditName' : 'upPensionName';
+  var zone = kind==='credit' ? el('upCredit') : el('upPension');
+  if(f){ el(lbl).textContent = f.name; zone.classList.add('has'); }
+  else { zone.classList.remove('has'); }
+}
+
+function doParse(){
+  if(!_parseFiles.credit){ showMsg('parseMsg','Выберите PDF кредитного отчёта','err'); return; }
+  if(el('consentChk') && !el('consentChk').checked){ showMsg('parseMsg','Отметьте согласие клиента на обработку персональных данных','err'); return; }
+  var btn=el('btnParse'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>Распознаём…';
+  showMsg('parseMsg','Загружаем и распознаём файл…','warn');
+  el('parseResult').style.display='none';
+  var done=function(d){
+    btn.disabled=false; btn.textContent='Распознать отчёт';
+    if(!d||!d.ok){ showMsg('parseMsg',(d&&(d.error||d.detail))||'Не удалось распознать отчёт','err'); return; }
+    hideMsg('parseMsg'); renderParse(d);
+  };
+  var fail=function(e){
+    btn.disabled=false; btn.textContent='Распознать отчёт';
+    showMsg('parseMsg', navigator.onLine?('Ошибка: '+(e&&e.message||e)):'Нет связи с сервером','err');
+  };
+  if(window.__parseMock){ window.__parseMock(_parseFiles).then(done, fail); return; }
+  if(!PARSER_API){ btn.disabled=false; btn.textContent='Распознать отчёт'; showMsg('parseMsg','Онлайн-парсер не настроен. Используйте десктоп-версию.','err'); return; }
+  var fd=new FormData();
+  fd.append('token', token||''); fd.append('file', _parseFiles.credit);
+  if(_parseFiles.pension) fd.append('pension', _parseFiles.pension);
+  fetch(PARSER_API.replace(/\/$/,'')+'/parse', {method:'POST', body:fd})
+    .then(function(r){ return r.json().catch(function(){return {ok:false,error:'Некорректный ответ сервера'};}); })
+    .then(done).catch(fail);
+}
+
+function renderParse(d){
+  _parseExcel = d.excel_b64;
+  var demoNote = d._demo ? '<div class="pr-demo">⚠️ Демо-режим: показан <b>пример разбора</b>, ваш файл в браузере не обрабатывается. После подключения сервера здесь будет разбор именно вашего PDF.</div>' : '';
+  var iin = d.iin ? (d.iin.length===12 ? ('********'+d.iin.slice(-4)) : d.iin) : '—';
+  var src = (d.source==='gkb') ? 'ГКБ · МКБ' : 'ПКБ · 1cb.kz';
+  _parseName = 'anketa_'+(d.iin? d.iin.slice(-4):'client')+'.xlsx';
+  var h = demoNote + '<div class="pr-head"><span class="pr-src">'+src+'</span>'
+    + '<div class="pr-kv"><span>ФИО</span><b>'+(d.fio||'—')+'</b></div>'
+    + '<div class="pr-kv"><span>ИИН</span><b>'+iin+'</b></div>'
+    + '<div class="pr-kv"><span>ПКР</span><b>'+(d.pkr||'—')+'</b></div>'
+    + '<div class="pr-kv"><span>Нагрузка/мес</span><b>'+fmt(d.monthly_load)+'</b></div>'
+    + (d.srzp?'<div class="pr-kv"><span>СРЗП</span><b>'+fmt(d.srzp)+'</b></div>':'')
+    + '</div>';
+  if((d.active||[]).length){
+    h += '<div class="pr-sec">Действующие ('+d.active.length+')</div><div class="pr-table-wrap"><table class="pr-table"><thead><tr><th>Банк</th><th>Тип</th><th>Сумма</th><th>Платёж</th><th>Остаток</th><th>Просрочка</th></tr></thead><tbody>';
+    d.active.forEach(function(c){ h+='<tr><td>'+(c.creditor||'—')+'</td><td>'+(c.financing_type||'')+'</td><td>'+fmtN(c.contract_amount)+'</td><td>'+fmtN(c.periodic_payment)+'</td><td>'+fmtN(c.outstanding)+'</td><td>'+((c.current_overdue_days||0)>0?('<span class="pr-bad">'+c.current_overdue_days+' дн.</span>'):'—')+'</td></tr>'; });
+    h += '</tbody></table></div>';
+  }
+  var comp=(d.completed_recent||[]).concat(d.completed_old||[]);
+  if(comp.length){
+    h += '<div class="pr-sec">Завершённые с просрочкой / цессией ('+comp.length+')</div><div class="pr-table-wrap"><table class="pr-table"><thead><tr><th>Банк</th><th>Тип</th><th>Макс. просрочка</th><th>Статус</th></tr></thead><tbody>';
+    comp.forEach(function(c){
+      // "Статус" из PDF иногда содержит "слипшийся" текст из соседних колонок —
+      // показываем только цессию (как в Excel), без сырого статуса из отчёта.
+      var st = c.cessionary ? ('Цессия → '+c.cessionary) : '—';
+      h+='<tr><td>'+(c.creditor||'—')+'</td><td>'+(c.financing_type||'')+'</td><td>'+((c.max_overdue_days||0)>0?('<span class="pr-bad">'+c.max_overdue_days+' дн.</span>'):'—')+'</td><td class="pr-st">'+st+'</td></tr>';
+    });
+    h += '</tbody></table></div>';
+  }
+  h += '<button class="btn btn-v" style="margin-top:16px" onclick="downloadExcel()">⬇ Скачать Excel-анкету</button>';
+  el('parseResult').innerHTML=h; el('parseResult').style.display='block';
+}
+
+function downloadExcel(){
+  if(!_parseExcel) return;
+  try{
+    var bin=atob(_parseExcel), arr=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+    var blob=new Blob([arr],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download=_parseName; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },500);
+  }catch(e){ showMsg('parseMsg','Ошибка скачивания','err'); }
+}
+
+// ── Ленивая загрузка встроенных инструментов в изолированный iframe ──
+var _toolsLoaded={};
+function loadTool(fileName, frameId, loadingId){
+  if(_toolsLoaded[frameId]) return;
+  _toolsLoaded[frameId]=true;
+  google.script.run
+    .withSuccessHandler(function(html){
+      var f=el(frameId);
+      f.srcdoc=html;
+      f.style.display='block';
+      if(el(loadingId)) el(loadingId).style.display='none';
+    })
+    .withFailureHandler(function(e){
+      _toolsLoaded[frameId]=false;
+      if(el(loadingId)) el(loadingId).innerHTML='<p style="color:var(--red3)">Не удалось загрузить инструмент: '+(e.message||e)+'</p>';
+    })
+    .getToolHtml(fileName, token);
+}
+
+function printBlanks(){
+  var f=el('blankFrame');
+  if(f&&f.contentWindow&&f.style.display!=='none'){ f.contentWindow.focus(); f.contentWindow.print(); }
+  else alert('Подождите, бланки ещё загружаются.');
+}
+
+function applyParserUrl(url){
+  var a=el('parserDownloadBtn');
+  if(!a) return;
+  if(url){ a.href=url; a.removeAttribute('data-disabled'); }
+  else { a.href='#'; a.onclick=function(e){e.preventDefault();alert('Ссылка на скачивание пока не задана. Укажите PARSER_DOWNLOAD_URL в Code.gs.');}; }
+}
+
+// ═══════════════════════════════════════════
+//  MODE / PILLS
+// ═══════════════════════════════════════════
+function setMode(m){
+  S.mode=m;
+  el('mVar').classList.toggle('on',m==='var');
+  el('mEq').classList.toggle('on',m==='eq');
+  el('sVar').style.display=m==='var'?'block':'none';
+  el('sEq').style.display=m==='eq'?'block':'none';
+  saveState();
+}
+
+function setBuhType(t){
+  S.buhType=t;
+  el('bT').classList.toggle('on',t==='Трудовой');
+  el('bG').classList.toggle('on',t==='ГПХ');
+  saveState(); scheduleBuhCalc();
+}
+
+function setMonths(n){
+  S.eqMonths=n;
+  [3,4,5,6].forEach(function(m){el('em'+m).classList.toggle('on',m===n);});
+  saveState(); scheduleEqCalc();
+}
+
+function setScType(t){
+  S.scType=t;
+  el('scBT').classList.toggle('on',t==='Трудовой');
+  el('scBG').classList.toggle('on',t==='ГПХ');
+}
+
+// ═══════════════════════════════════════════
+//  BUILD OPV GRID
+// ═══════════════════════════════════════════
+(function buildGrid(){
+  var g=el('opvGrid');
+  MNAMES.forEach(function(nm,i){
+    var d=document.createElement('div');d.className='mcell';
+    d.innerHTML='<label class="lb">'+nm+'</label><input class="inp" type="number" min="0" inputmode="numeric" placeholder="0" id="opv'+(i+1)+'">';
+    g.appendChild(d);
+    // live debounce
+    d.querySelector('input').addEventListener('input',function(){ saveState(); scheduleVarCalc(); });
+  });
+})();
+
+el('varTarget').addEventListener('input',function(){ saveState(); scheduleVarCalc(); });
+el('eqIncome').addEventListener('input',function(){  saveState(); scheduleEqCalc(); });
+el('buhSal').addEventListener('input',function(){    saveState(); scheduleBuhCalc(); });
+
+function clearOPV(){
+  for(var i=1;i<=12;i++){ var e=el('opv'+i); if(e) e.value=''; }
+  saveState(); scheduleVarCalc();
+}
+
+// ═══════════════════════════════════════════
+//  LIVE CALC SCHEDULERS
+// ═══════════════════════════════════════════
+function scheduleVarCalc(){
+  clearTimeout(varTimer);
+  setLive('varLive','varLiveTxt','calc','Пересчитываем...');
+  varTimer=setTimeout(doCalcVar, DEBOUNCE);
+}
+
+function scheduleEqCalc(){
+  clearTimeout(eqTimer);
+  setLive('eqLive','eqLiveTxt','calc','Пересчитываем...');
+  eqTimer=setTimeout(doCalcEq, DEBOUNCE);
+}
+
+function scheduleBuhCalc(){
+  clearTimeout(buhTimer);
+  setLive('buhLive','buhLiveTxt','calc','Пересчитываем...');
+  buhTimer=setTimeout(doCalcBuh, DEBOUNCE);
+}
+
+// ═══════════════════════════════════════════
+//  RENDER BREAKDOWN
+// ═══════════════════════════════════════════
+function renderBD(rows, type, containerId){
+  var c=el(containerId);
+  if(!rows||!rows.length){
+    c.innerHTML='<div class="empty"><div class="eico">📋</div><p>Введите зарплату для разбивки</p></div>';
+    return;
+  }
+  var isT=type==='Трудовой';
+  var html='<div class="bd-head">Разбивка — '+type+'</div>';
+  rows.forEach(function(r){
+    if(!r)return;
+    var isNull=r.val===null||r.val===undefined;
+    html+='<div class="bd-row'+(r.isTotal?' total':'')+(isNull?' dim':'')+'">'
+      +'<span class="bdn">'+r.label+'</span>'
+      +'<span class="bdv">'+(isNull?'—':fmt(r.val))+'</span></div>';
+  });
+  if(!isT) html+='<p style="font-size:11px;color:var(--faint);margin-top:10px">* ОПВР и ООСМС не начисляются по ГПХ</p>';
+  html+='<div class="action-bar"><button class="a-btn" onclick="copyBD()">📋 Скопировать</button><button class="a-btn" onclick="openPdf(\'buh\')">📄 PDF</button></div>';
+  c.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════
+//  RENDER TARGET
+// ═══════════════════════════════════════════
+function renderTarget(plan, avg, target){
+  var w=el('varTgt'),b=el('varTgtBody'),ti=el('varTgtTitle');
+  if(!plan||!plan.length){w.classList.remove('on');return;}
+  ti.textContent='Не хватает '+fmt(target-avg)+' до цели '+fmt(target);
+  var html='';
+  plan.forEach(function(row){
+    html+='<div class="tgt-row">'
+      +'<div class="tgt-mo"><div class="tgt-badge">'+row.months+'</div>'+row.months+' мес.</div>'
+      +'<div class="tgt-vals"><div class="tgt-opv">+'+fmt(row.opvPerMonth)+' ОПВ/мес</div>'
+      +'<div class="tgt-sal">Итог: '+fmt(row.achieved)+'</div></div></div>';
+  });
+  b.innerHTML=html; w.classList.add('on');
+}
+
+// ═══════════════════════════════════════════
+//  CALC VAR (live)
+// ═══════════════════════════════════════════
+function doCalcVar(){
+  if(!token) return;
+  lastAct=Date.now();
+  var opv12=[];
+  for(var i=1;i<=12;i++) opv12.push(el('opv'+i)?el('opv'+i).value||0:0);
+  var target=parseInt(el('varTarget').value)||0;
+  var hasSomeOpv=opv12.some(function(v){return Number(v)>0;});
+
+  if(!hasSomeOpv){
+    setLive('varLive','varLiveTxt','','Ожидание ввода');
+    el('varAvg').textContent='—';
+    el('varRightEmpty').style.display='block';
+    el('varRightResult').style.display='none';
+    el('varTgt').classList.remove('on');
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(!r||!r.ok){setLive('varLive','varLiveTxt','err','Ошибка расчёта');return;}
+      S.lastVarResult=r;
+      // Анимация смены цифры
+      var avg=el('varAvg');
+      avg.style.opacity='0';
+      avg.style.transform='translateY(4px)';
+      setTimeout(function(){
+        avg.style.transition='all .25s';
+        avg.style.opacity='1';
+        avg.style.transform='none';
+        if(r.avgSalary) animateNum('varAvg', r.avgSalary); else avg.textContent='—';
+      },100);
+
+      if(r.avgSalary){
+        el('varRightEmpty').style.display='none';
+        el('varRightResult').style.display='block';
+        animateNum('varRightAvg', r.avgSalary);
+        var filled=opv12.filter(function(v){return Number(v)>0;}).length;
+        el('varRightMeta').innerHTML=
+          'Месяцев: <strong>'+filled+'</strong><br>'+
+          'Формула: <strong>ЕНПФ</strong><br>'+
+          'Всего ОПВ: <strong>'+fmt(opv12.reduce(function(a,b){return a+Number(b);},0))+'</strong>';
+      }
+
+      if(target>0&&r.avgSalary&&target>r.avgSalary&&r.targetPlan){
+        renderTarget(r.targetPlan,r.avgSalary,target);
+      } else { el('varTgt').classList.remove('on'); }
+
+      setLive('varLive','varLiveTxt','done','Готово ✓');
+    })
+    .withFailureHandler(function(e){
+      var m=String(e.message||e);
+      if(m.includes('NO_SESSION')){token=null;localStorage.removeItem(TK);setUI(false);return;}
+      setLive('varLive','varLiveTxt','err','Ошибка: '+m);
+    })
+    .apiCalcVar(token,{type:'',salary:0,opv12:opv12,target:target});
+}
+
+// ═══════════════════════════════════════════
+//  CALC EQ (live)
+// ═══════════════════════════════════════════
+function doCalcEq(){
+  if(!token) return;
+  lastAct=Date.now();
+  var income=el('eqIncome').value;
+  var months=S.eqMonths;
+  if(!income||!months){setLive('eqLive','eqLiveTxt','','Ожидание ввода');return;}
+
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(!r||!r.ok){setLive('eqLive','eqLiveTxt','err','Ошибка');return;}
+      S.lastEqResult=r;
+      if(r.avgSalary){el('eqAvgBox').style.display='flex';animateNum('eqAvg', r.avgSalary);}
+      else el('eqAvgBox').style.display='none';
+      if(r.payments&&r.payments.length){
+        var items='';
+        r.payments.forEach(function(v,i){items+='<div class="pay-item"><div class="pay-mo">'+(i+1)+' мес</div><div class="pay-val">'+fmt(v)+'</div></div>';});
+        el('eqPayGrid').innerHTML=items;
+        el('eqPayWrap').style.display='block';
+        el('eqEmpty').style.display='none';
+        el('eqActions').style.display='flex';
+      }
+      setLive('eqLive','eqLiveTxt','done','Готово ✓');
+    })
+    .withFailureHandler(function(e){
+      var m=String(e.message||e);
+      if(m.includes('NO_SESSION')){token=null;localStorage.removeItem(TK);setUI(false);return;}
+      setLive('eqLive','eqLiveTxt','err','Ошибка: '+m);
+    })
+    .apiCalcEq(token,{type:'',salary:0,income:income,months:months});
+}
+
+// ═══════════════════════════════════════════
+//  CALC BUH (live)
+// ═══════════════════════════════════════════
+function doCalcBuh(){
+  if(!token) return;
+  var type=S.buhType, sal=el('buhSal').value;
+  if(!type||!sal||sal<=0){
+    setLive('buhLive','buhLiveTxt','','Ожидание ввода');
+    el('buhRes').innerHTML='<div class="empty"><div class="eico">🧾</div><p>Выберите тип и введите зарплату</p></div>';
+    return;
+  }
+  lastAct=Date.now();
+
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(!r||!r.ok){setLive('buhLive','buhLiveTxt','err','Ошибка');return;}
+      S.lastBuhResult=r;
+      renderBD(r.breakdown,type,'buhRes');
+      setLive('buhLive','buhLiveTxt','done','Готово ✓');
+    })
+    .withFailureHandler(function(e){
+      var m=String(e.message||e);
+      if(m.includes('NO_SESSION')){token=null;localStorage.removeItem(TK);setUI(false);return;}
+      setLive('buhLive','buhLiveTxt','err','Ошибка: '+m);
+    })
+    .apiCalcBuh(token,{type:type,salary:sal});
+}
+
+// ═══════════════════════════════════════════
+//  SCENARIOS
+// ═══════════════════════════════════════════
+function selectScenario(name){
+  S.scScenario=name;
+  ['scC1','scC2','scC3'].forEach(function(id){el(id).classList.remove('on');});
+  var map={target:'scC1',approval:'scC2',minimal:'scC3'};
+  if(map[name]) el(map[name]).classList.add('on');
+  el('scInputWrap').style.display='block';
+  var labels={target:'Желаемая средняя зарплата (₸)',approval:'Нужная зарплата для ипотеки (₸)',minimal:'Минимальная целевая зарплата (₸)'};
+  el('scInputLabel').textContent=labels[name]||'Целевая зарплата (₸)';
+  el('scResult').style.display='none';
+}
+
+function runScenario(){
+  if(!token||!S.scScenario){return;}
+  var target=parseInt(el('scTarget').value)||300000;
+  // Собрать существующие OPV
+  var existing=[];
+  for(var i=1;i<=12;i++){var e=el('opv'+i);if(e&&Number(e.value)>0)existing.push(Number(e.value));}
+
+  el('scResult').style.display='block';
+  el('scResultBody').innerHTML='<div class="empty"><div class="eico"><span class="spin dark"></span></div><p>Считаем...</p></div>';
+
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(!r||!r.ok){el('scResultBody').innerHTML='<div class="msg on err">Ошибка расчёта</div>';return;}
+      renderScenarioResult(r);
+    })
+    .withFailureHandler(function(e){
+      var m=String(e.message||e);
+      if(m.includes('NO_SESSION')){token=null;localStorage.removeItem(TK);setUI(false);return;}
+      el('scResultBody').innerHTML='<div class="msg on err">'+m+'</div>';
+    })
+    .apiScenario(token,{scenario:S.scScenario,type:S.scType,target:target,existing:existing});
+}
+
+function renderScenarioResult(r){
+  var res=r.result||{};
+  var html='';
+
+  if(r.scenario==='target'||r.scenario==='approval'){
+    var plan=res.plan||[];
+    var cur=res.currentAvg||0;
+    var tgt=res.targetSalary||res.approvalTarget||0;
+
+    if(res.breakdown){
+      html+='<div class="bd-head">Разбивка налогов при целевой ЗП</div>';
+      res.breakdown.forEach(function(row){
+        if(!row)return;
+        var isNull=row.val===null||row.val===undefined;
+        html+='<div class="bd-row'+(row.isTotal?' total':'')+(isNull?' dim':'')+'">'
+          +'<span class="bdn">'+row.label+'</span>'
+          +'<span class="bdv">'+(isNull?'—':fmt(row.val))+'</span></div>';
+      });
+      html+='<div class="div"></div>';
+    }
+
+    if(cur>0) html+='<div style="font-size:13px;color:var(--muted);margin-bottom:12px">Текущая средняя: <strong style="color:var(--v)">'+fmt(cur)+'</strong> &nbsp;→&nbsp; Цель: <strong style="color:var(--gold)">'+fmt(tgt)+'</strong></div>';
+
+    html+='<div class="tgt-wrap on" style="margin:0">'
+      +'<div class="tgt-head"><span style="font-size:15px">📅</span>'
+      +'<span class="tgt-ht">Сколько ОПВ добавить в месяц</span></div>'
+      +'<div class="tgt-body">';
+    plan.forEach(function(row){
+      html+='<div class="tgt-row"><div class="tgt-mo"><div class="tgt-badge">'+row.months+'</div>'+row.months+' мес.</div>'
+        +'<div class="tgt-vals"><div class="tgt-opv">+'+fmt(row.opvPerMonth)+' ОПВ/мес</div>'
+        +'<div class="tgt-sal">Итог: '+fmt(row.achieved)+'</div></div></div>';
+    });
+    html+='</div></div>';
+  }
+
+  if(r.scenario==='minimal'){
+    var all=res.allPlans||[];
+    var best=res.best;
+    if(best){
+      html+='<div style="background:var(--grn2);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--grn);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">🏆 Оптимальный вариант</div>'
+        +'<div style="font-size:18px;font-weight:800;color:var(--grn)">+'+fmt(best.opvPerMonth)+' ОПВ × '+best.months+' мес = '+fmt(best.totalCost)+'</div>'
+        +'<div style="font-size:12px;color:var(--grn);margin-top:4px">Итоговая ЗП: '+fmt(best.achieved)+'</div>'
+        +'</div>';
+    }
+    html+='<div class="tgt-wrap on" style="margin:0">'
+      +'<div class="tgt-head"><span style="font-size:15px">⚡</span><span class="tgt-ht">Все варианты</span></div>'
+      +'<div class="tgt-body">';
+    all.forEach(function(row){
+      html+='<div class="tgt-row"><div class="tgt-mo"><div class="tgt-badge">'+row.months+'</div>'+row.months+' мес.</div>'
+        +'<div class="tgt-vals"><div class="tgt-opv">+'+fmt(row.opvPerMonth)+' ОПВ/мес</div>'
+        +'<div class="tgt-sal">Итого вложений: '+fmt(row.totalCost)+'</div></div></div>';
+    });
+    html+='</div></div>';
+  }
+
+  el('scResultBody').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════
+//  HISTORY
+// ═══════════════════════════════════════════
+function loadHistory(){
+  if(!token) return;
+  el('histContent').innerHTML='<div class="empty"><div class="eico"><span class="spin dark"></span></div><p>Загружаем...</p></div>';
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(!r||!r.ok||!r.rows.length){
+        el('histContent').innerHTML='<div class="empty"><div class="eico">📭</div><p>История пуста</p></div>';
+        return;
+      }
+      var modeLabels={VAR:'Разные ОПВ',EQ:'Одинаковые ОПВ',BUH:'Бухгалтерия',SCENARIO:'Сценарий',LOGIN:'Вход'};
+      var badgeCls={VAR:'hb-var',EQ:'hb-eq',BUH:'hb-buh',SCENARIO:'hb-sc'};
+      var html='<div class="hist-list">';
+      r.rows.forEach(function(row){
+        var bc=badgeCls[row.mode]||'hb-var';
+        html+='<div class="hist-item">'
+          +'<div class="hist-left">'
+            +'<div class="hist-date">'+row.date+'</div>'
+            +'<div class="hist-mode"><span class="hist-badge '+bc+'">'+(modeLabels[row.mode]||row.mode)+'</span>'+row.type+'</div>'
+            +'<div class="hist-sum" style="margin-top:3px">'+row.summary.slice(0,60)+(row.summary.length>60?'...':'')+'</div>'
+          +'</div>'
+          +'<div class="hist-right">'
+            +(row.avg?'<div class="hist-avg">'+fmt(row.avg)+'</div>':'')
+            +(row.total?'<div class="hist-total">К буху: '+fmt(row.total)+'</div>':'')
+          +'</div>'
+          +'</div>';
+      });
+      html+='</div>';
+      el('histContent').innerHTML=html;
+      // Обновить бейдж
+      el('histBadge').textContent=r.rows.length;
+      el('histBadge').classList.add('show');
+    })
+    .withFailureHandler(function(){
+      el('histContent').innerHTML='<div class="empty"><div class="eico">⚠️</div><p>Не удалось загрузить историю</p></div>';
+    })
+    .apiGetHistory(token);
+}
+
+// ═══════════════════════════════════════════
+//  COPY RESULT
+// ═══════════════════════════════════════════
+function copyResult(mode){
+  var txt='';
+  if(mode==='var'&&S.lastVarResult){
+    txt='Средняя зарплата: '+fmt(S.lastVarResult.avgSalary);
+  }
+  if(mode==='eq'&&S.lastEqResult){
+    txt='Средняя зарплата: '+fmt(S.lastEqResult.avgSalary);
+    if(S.lastEqResult.payments&&S.lastEqResult.payments[0]){
+      txt+='\nЕжемесячный ОПВ: '+fmt(S.lastEqResult.payments[0]);
+    }
+  }
+  if(txt){ try{navigator.clipboard.writeText(txt);}catch(e){} }
+}
+
+function copyBD(){
+  var rows=S.lastBuhResult&&S.lastBuhResult.breakdown;
+  if(!rows)return;
+  var txt=rows.map(function(r){return r.label+': '+(r.val!=null?fmt(r.val):'—');}).join('\n');
+  try{navigator.clipboard.writeText(txt);}catch(e){}
+}
+
+// ═══════════════════════════════════════════
+//  PDF
+// ═══════════════════════════════════════════
+var _pdfMode='';
+
+function openPdf(mode){
+  _pdfMode=mode;
+  el('pdfOverlay').classList.add('on');
+  el('pdfContent').innerHTML='<div style="text-align:center;padding:30px"><span class="spin dark"></span></div>';
+
+  var payload={mode:mode};
+  if(mode==='var'&&S.lastVarResult) payload.result=S.lastVarResult;
+  if(mode==='eq'&&S.lastEqResult)   payload.result=S.lastEqResult;
+  if(mode==='buh'&&S.lastBuhResult) payload.result=S.lastBuhResult;
+  payload.type=S.buhType||S.scType||'';
+
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(!r||!r.ok){el('pdfContent').innerHTML='<p>Ошибка</p>';return;}
+      renderPdfPreview(r,payload);
+    })
+    .withFailureHandler(function(){el('pdfContent').innerHTML='<p>Ошибка</p>';})
+    .apiGetPdfData(token, payload);
+}
+
+function renderPdfPreview(meta, payload){
+  var res=payload.result||{};
+  var html='<div class="pdf-logo">📊 ОПВ Калькулятор</div>';
+  html+='<div class="pdf-meta">Клиент: <strong>'+meta.clientName+'</strong> &nbsp;|&nbsp; Дата: '+meta.date+'</div>';
+
+  if(res.avgSalary){
+    html+='<div class="pdf-section">'
+      +'<div class="pdf-section-title">Результат</div>'
+      +'<div class="pdf-row"><span>Средняя зарплата</span><strong>'+fmt(res.avgSalary)+'</strong></div>'
+      +'</div>';
+  }
+
+  if(res.breakdown&&res.breakdown.length){
+    html+='<div class="pdf-section"><div class="pdf-section-title">Разбивка налогов</div>';
+    res.breakdown.forEach(function(row){
+      if(!row)return;
+      var isNull=row.val===null||row.val===undefined;
+      var tot=row.isTotal?' total-r':'';
+      html+='<div class="pdf-row'+tot+'"><span>'+row.label+'</span><span>'+(isNull?'—':fmt(row.val))+'</span></div>';
+    });
+    html+='</div>';
+    var total=res.breakdown[res.breakdown.length-1];
+    if(total&&total.isTotal) html+='<div class="pdf-total-big">ИТОГО к бухгалтеру: '+fmt(total.val)+'</div>';
+  }
+
+  if(res.payments&&res.payments.length){
+    html+='<div class="pdf-section"><div class="pdf-section-title">Ежемесячные платежи ОПВ</div>';
+    res.payments.forEach(function(v,i){
+      html+='<div class="pdf-row"><span>'+(i+1)+' мес</span><span>'+fmt(v)+'</span></div>';
+    });
+    html+='</div>';
+  }
+
+  el('pdfContent').innerHTML=html;
+}
+
+function closePdf(e){
+  if(e&&e.target!==el('pdfOverlay'))return;
+  el('pdfOverlay').classList.remove('on');
+}
+
+function doPrintPdf(){ window.print(); }
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+(function init(){
+  if(!token){setUI(false);return;}
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r&&r.ok){
+        setUI(true,r.clientName);setSubBadge(r.daysLeft);applyParserUrl(r.parserUrl);
+      } else if(r&&r.expired){
+        showPaywall(r);
+      } else {
+        token=null;localStorage.removeItem(TK);setUI(false);
+      }
+    })
+    .withFailureHandler(function(){token=null;localStorage.removeItem(TK);setUI(false);})
+    .apiMe(token);
+})();
+</script>
+</body>
+</html>
