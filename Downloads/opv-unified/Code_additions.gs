@@ -224,3 +224,95 @@ function apiLicense_(key, deviceId) {
     kaspiPhone: KASPI_PHONE, kaspiName: KASPI_NAME, price: SUB_PRICE
   };
 }
+
+// ============================================================
+//  ИПОТЕКА: конфиг для расчёта в браузере + актуальные ставки
+// ============================================================
+
+// ЗАМЕНЯЕТ старую _avgSalary_ в Code.gs — СТАРУЮ УДАЛИ, иначе будет ошибка
+// «повторное объявление функции».
+//
+// Что изменилось: в первой половине формулы знаменатель был жёстко «6»,
+// из-за чего при 12 заполненных месяцах результат завышался в полтора раза
+// (вторая половина формулы делится на n−2 и масштабируется корректно).
+// Теперь делим на max(6, n): при 6 месяцах результат прежний, при 12 —
+// перестаёт зависеть от количества введённых месяцев.
+function _avgSalary_(list){
+  var n = list.length, sum = list.reduce(function(a,b){ return a+b; }, 0);
+  var s1 = sum * 7.9 / Math.max(6, n);
+  if (n < 3) return Math.round(s1);
+  var mx = Math.max.apply(null, list), mn = Math.min.apply(null, list);
+  return Math.round((s1 + (sum - mx - mn) * 7.9 / (n - 2)) / 2);
+}
+
+// Полный конфиг для калькулятора ипотеки в браузере: МРП, пороги КД,
+// множители прожиточного минимума и все программы с коэффициентами.
+// Расчёт идёт на клиенте (мгновенно), а цифры — всегда из Google-таблицы.
+function apiGetCalcConfig(token){
+  _requireSession_(token);
+  var cfg = _readSettings_();
+  var programs = Object.keys(cfg.programs).map(function(k){
+    var p = cfg.programs[k];
+    return {
+      key: p.key, name: p.name, icon: p.icon, desc: p.desc,
+      downRatio: p.downRatio,
+      variants: p.variants.map(function(v){ return { label: v.label, coeff: v.coeff }; })
+    };
+  });
+  return {
+    ok: true,
+    mrp: cfg.mrp,
+    pmNauryz: cfg.pmNauryz,
+    pmOther: cfg.pmOther,
+    kd: cfg.kd,
+    nauryzKeys: cfg.nauryzKeys,
+    incomeReservePct: 0.10,
+    programs: programs
+  };
+}
+
+// РАЗОВАЯ функция: записывает в лист «Программы» актуальные ставки и
+// коэффициенты (сверенные с боевой CRM). Запусти один раз из редактора
+// Apps Script: выбери setActualPrograms в списке функций → «Выполнить».
+//
+// ВНИМАНИЕ: перезаписывает названия вариантов и коэффициенты у шести
+// программ ниже. Прежние значения пишутся в лог (Ctrl+Enter → «Журнал
+// выполнения»), чтобы можно было вернуть вручную.
+function setActualPrograms(){
+  var ACTUAL = [
+    ['5050',     'Ипотека 50/50',      '🏛️', 50, '8.5% — 8 лет',       0.0080522,  '5% — 6 лет',          0.0080525,  '',                   0],
+    ['3070',     'Программа 30/70',    '🏠', 30, '~10-12 лет',          0.00886788, '',                    0,          '',                   0],
+    ['nauryz20', 'Наурыз (взнос 20%)', '🌸', 20, '7% — 19 лет',         0.00843335, '9% — 19 лет',         0.0101,     '',                   0],
+    ['nauryz10', 'Наурыз (взнос 10%)', '🌷', 10, '7% — 19 лет',         0.00943335, '9% — 19 лет',         0.0111,     '',                   0],
+    ['jasyl',    'Жасыл Ипотека',      '🌿', 20, '7% очередники',       0.00783333, '11% военные',         0.01116667, '15% все граждане',   0.01241667],
+    ['askeri',   'Наурыз Аскери',      '🎖️',  0, '1-8 лет',             0.0127,     '9-19 лет',            0.00376,    '',                   0]
+  ];
+
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  _initProgramsSheet_(ss);                       // создаст лист, если его нет
+  var sh = ss.getSheetByName('Программы');
+  var data = sh.getDataRange().getValues();
+  var updated = 0, added = 0;
+
+  ACTUAL.forEach(function(row){
+    var key = row[0], foundRow = -1;
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0] || '').trim() === key) { foundRow = i + 1; break; }
+    }
+    if (foundRow > 0) {
+      Logger.log('БЫЛО  %s: %s', key, JSON.stringify(data[foundRow - 1].slice(0, 10)));
+      sh.getRange(foundRow, 1, 1, 10).setValues([row]);
+      updated++;
+    } else {
+      sh.appendRow(row.concat(['']));
+      added++;
+    }
+    Logger.log('СТАЛО %s: %s', key, JSON.stringify(row));
+  });
+
+  sh.getRange(2, 6, sh.getLastRow() - 1, 5).setNumberFormat('0.0000000');
+  CacheService.getScriptCache().remove('CFG_V3');  // сбросить кэш настроек
+  _memCache_ = {};
+  Logger.log('Готово: обновлено %s, добавлено %s. Кэш сброшен.', updated, added);
+  return 'Обновлено: ' + updated + ', добавлено: ' + added;
+}

@@ -753,6 +753,34 @@ body {
 .pr-stat b { font-size:15px; color:var(--ink); font-variant-numeric:tabular-nums; display:block; margin-top:3px; }
 .pr-stat b.pr-bad { color:var(--red3); }
 .pr-sec-sub { font-size:11px; color:var(--muted); font-weight:500; margin-left:6px; }
+
+/* ── Ипотечный калькулятор ── */
+.mort-inputs { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+.mort-pm-note { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.5; }
+.mort-res { background:var(--v4); border:1px solid var(--v5); border-radius:12px; padding:14px 16px; }
+.mort-res.warn { background:var(--warn_bg,#FFFBEB); border-color:#FDE68A; }
+.mort-big { font-family:'DM Serif Display',serif; font-size:26px; color:var(--v); line-height:1.1; font-variant-numeric:tabular-nums; }
+.mort-res.warn .mort-big { color:var(--warn,#92400E); font-size:17px; font-family:inherit; font-weight:700; }
+.mort-big-lbl { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.mort-rows { margin-top:12px; border-top:1px solid var(--v5); padding-top:10px; display:flex; flex-direction:column; gap:7px; }
+.mort-row { display:flex; justify-content:space-between; align-items:baseline; font-size:13px; gap:12px; }
+.mort-row span { color:var(--ink2); }
+.mort-row b { font-variant-numeric:tabular-nums; color:var(--ink); white-space:nowrap; }
+.mort-row.dim span, .mort-row.dim b { color:var(--muted); font-size:11.5px; font-weight:500; }
+.mort-empty { font-size:12.5px; color:var(--muted); padding:10px 0; }
+.mort-cmp { display:flex; flex-direction:column; }
+.mort-cmp-row { display:grid; grid-template-columns:1fr auto auto; gap:10px 14px; align-items:center; padding:10px 8px; border-bottom:1px solid var(--bdr2); border-radius:8px; cursor:pointer; transition:.15s; }
+.mort-cmp-row:last-child { border-bottom:none; }
+.mort-cmp-row:hover { background:var(--v4); }
+.mort-cmp-row.on { background:var(--v3); }
+.mort-cmp-name { font-size:13px; font-weight:600; color:var(--ink); display:flex; align-items:center; gap:7px; }
+.mort-cmp-name small { font-weight:500; color:var(--muted); font-size:11px; }
+.mort-cmp-val { font-size:13.5px; font-weight:700; color:var(--v); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+.mort-cmp-val.muted { color:var(--muted); font-weight:600; }
+.mort-cmp-sub { font-size:11px; color:var(--muted); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.mort-best { font-size:9.5px; font-weight:800; background:var(--grn2); color:var(--grn); border-radius:5px; padding:2px 6px; letter-spacing:.03em; }
+.mort-disclaimer { font-size:11px; color:var(--muted); line-height:1.55; margin-top:14px; padding-top:12px; border-top:1px solid var(--bdr); }
+@media(max-width:560px){ .mort-cmp-row { grid-template-columns:1fr auto; } .mort-cmp-sub { grid-column:2; } }
 .pr-table tfoot td { border-top:2px solid var(--ink); font-weight:800; background:var(--v4,#F1EAFB); }
 .consent-row { display:flex; gap:8px; align-items:flex-start; margin-top:14px; font-size:12px; color:var(--ink2); line-height:1.5; cursor:pointer; }
 .consent-row input { margin-top:2px; flex-shrink:0; width:16px; height:16px; accent-color:var(--v); }
@@ -789,6 +817,7 @@ body {
     <button class="ntab on" data-tab="dash" onclick="goTab('dash')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Главная</button>
     <button class="ntab" data-tab="opv" onclick="goTab('opv')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>Расчёт ОПВ</button>
     <button class="ntab" data-tab="dep" onclick="goTab('dep')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></span>Депозиты</button>
+    <button class="ntab" data-tab="mort" onclick="goTab('mort')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>Ипотека</button>
     <button class="ntab" data-tab="blank" onclick="goTab('blank')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 16h4"/></svg></span>Бланки</button>
     <button class="ntab ntab-sec" data-tab="buh" onclick="goTab('buh')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V3z"/><path d="M9 8h6M9 12h6"/></svg></span>Бухгалтерия</button>
     <button class="ntab ntab-sec" data-tab="sc" onclick="goTab('sc')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg></span>Сценарии</button>
@@ -869,6 +898,9 @@ body {
     <button class="tile" onclick="goTab('opv')">
       <span class="tile-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
       <b>Расчёт ОПВ</b><small>Средняя зарплата по взносам, план до цели</small></button>
+    <button class="tile" onclick="goTab('mort')">
+      <span class="tile-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>
+      <b>Ипотека</b><small>Максимальная сумма, платёж, сравнение программ</small></button>
     <button class="tile" onclick="goTab('dep')">
       <span class="tile-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg></span>
       <b>Депозиты</b><small>Калькулятор вознаграждения, дата цели</small></button>
@@ -1195,6 +1227,83 @@ body {
   </div>
 </div>
 
+<!-- ═════ ИПОТЕКА ═════ -->
+<div id="vMort" class="panel" style="display:none">
+  <div class="hero">
+    <div class="hero-ico"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div>
+    <div><h2>Ипотечный калькулятор</h2><p>Максимальная сумма по доходу семьи и платёж по цене жилья</p></div>
+  </div>
+
+  <div id="mortLoading" class="tool-skeleton"><div class="sk sk-1"></div><div class="sk sk-2"></div></div>
+
+  <div id="mortBody" style="display:none">
+    <!-- Общие данные клиента -->
+    <div class="card">
+      <div class="ch"><div class="ci" style="background:var(--v3)"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" style="width:15px;height:15px"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 15c2.8 0 5 1.6 5 5"/></svg></div><div class="ct">Данные клиента</div></div>
+      <div class="cb">
+        <div class="mort-inputs">
+          <div class="fl" style="margin:0">
+            <label class="lb" for="mortMembers">Членов семьи</label>
+            <input class="inp" id="mortMembers" type="number" inputmode="numeric" min="1" max="20" value="1" oninput="mortRecalc()">
+          </div>
+          <div class="fl" style="margin:0">
+            <label class="lb" for="mortOldCredit">Текущие кредиты, ₸/мес</label>
+            <input class="inp" id="mortOldCredit" type="number" inputmode="numeric" placeholder="0" oninput="mortRecalc()">
+          </div>
+          <div class="fl" style="margin:0">
+            <label class="lb" for="mortProgram">Программа</label>
+            <select class="inp" id="mortProgram" onchange="onMortProgramChange()"></select>
+          </div>
+          <div class="fl" style="margin:0" id="mortVariantWrap">
+            <label class="lb" for="mortVariant">Ставка / срок</label>
+            <select class="inp" id="mortVariant" onchange="mortRecalc()"></select>
+          </div>
+        </div>
+        <p class="mort-pm-note" id="mortPmNote"></p>
+      </div>
+    </div>
+
+    <!-- Два режима -->
+    <div class="g2" style="margin-top:14px">
+      <!-- Знаю зарплату -->
+      <div class="card">
+        <div class="ch"><div class="ci" style="background:var(--v3)"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M4 4v16h16"/><path d="M7 14l4-4 3 3 5-6"/></svg></div><div class="ct">Знаю доход — сколько дадут</div></div>
+        <div class="cb">
+          <div class="fl">
+            <label class="lb" for="mortIncome">Доход семьи, ₸/мес</label>
+            <input class="inp gold" id="mortIncome" type="number" inputmode="numeric" placeholder="например 500 000" oninput="mortRecalc()">
+          </div>
+          <button class="btn-ghost btn" style="margin-top:6px;font-size:12px;padding:8px" onclick="mortUseOpvSalary()">↙ Подставить среднюю ЗП из вкладки «Расчёт ОПВ»</button>
+          <div id="mortIncomeResult" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- Знаю цену -->
+      <div class="card">
+        <div class="ch"><div class="ci" style="background:var(--gold4)"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></div><div class="ct">Знаю цену — какой платёж</div></div>
+        <div class="cb">
+          <div class="fl">
+            <label class="lb" for="mortPrice">Цена жилья, ₸</label>
+            <input class="inp gold" id="mortPrice" type="number" inputmode="numeric" placeholder="например 25 000 000" oninput="mortRecalc()">
+          </div>
+          <div id="mortPriceResult" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Сравнение программ -->
+    <div class="card" style="margin-top:14px" id="mortCompareCard">
+      <div class="ch"><div class="ci" style="background:var(--v3)"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M4 20V10M10 20V4M16 20v-7M22 20h-20"/></svg></div><div class="ct">Сравнение программ</div><span class="pr-sec-sub" id="mortCompareHint"></span></div>
+      <div class="cb"><div id="mortCompare"></div></div>
+    </div>
+
+    <p class="mort-disclaimer">
+      Расчёт ориентировочный, по методике банка (коэффициент долговой нагрузки и прожиточный минимум).
+      Итоговое решение принимает банк. Ставки и МРП берутся из вашей таблицы «Программы» и «Настройки».
+    </p>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <!-- ═════ ОНБОРДИНГ-ТУР ═════ -->
@@ -1352,7 +1461,7 @@ function restoreState(){
 //  SESSION UI
 // ═══════════════════════════════════════════
 function _resetPanels(){
-  ['vDash','vOpv','vBuh','vSc','vHist','vDep','vBlank','vParser'].forEach(function(id){
+  ['vDash','vOpv','vBuh','vSc','vHist','vDep','vBlank','vParser','vMort'].forEach(function(id){
     var e=el(id); if(e){ e.style.display='none'; e.classList.remove('on'); }
   });
   document.querySelectorAll('.ntab').forEach(function(t){ t.classList.remove('on'); });
@@ -1523,7 +1632,7 @@ el('keyInp').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()
 // ═══════════════════════════════════════════
 //  TABS
 // ═══════════════════════════════════════════
-var PANELS = {dash:'vDash',opv:'vOpv',buh:'vBuh',sc:'vSc',hist:'vHist',dep:'vDep',blank:'vBlank',parser:'vParser'};
+var PANELS = {dash:'vDash',opv:'vOpv',buh:'vBuh',sc:'vSc',hist:'vHist',dep:'vDep',blank:'vBlank',parser:'vParser',mort:'vMort'};
 
 function goTab(name){
   document.querySelectorAll('.ntab').forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-tab')===name); });
@@ -1535,6 +1644,7 @@ function goTab(name){
   if(name==='hist') loadHistory();
   if(name==='dep')  loadTool('DepositCalc','depFrame','depLoading');
   if(name==='blank')loadTool('DepositBlanks','blankFrame','blankLoading');
+  if(name==='mort') initMortgage();
 }
 
 function toggleMore(e){ if(e){e.stopPropagation();} var m=el('moreMenu'); if(m) m.classList.toggle('open'); }
@@ -1573,6 +1683,237 @@ function maybeTour(){ try{ if(!localStorage.getItem('onb_done')) setTimeout(tour
 
 // Клавиатура для кликабельных карточек (Enter/Пробел)
 function scKey(e, elm){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); elm.click(); } }
+
+// ═══════════════════════════════════════════
+//  ИПОТЕЧНЫЙ КАЛЬКУЛЯТОР
+//  Считает в браузере (мгновенно), но МРП, пороги КД и коэффициенты
+//  программ берёт с сервера — из листов «Настройки» и «Программы».
+//
+//  ФОРМУЛЫ (методика банка):
+//   ① ПМ      = МРП × К × членов_семьи      (К=10 Наурыз, 13 остальные)
+//   ② КД      = по доходу в МРП: ≤40→0.40, ≤65→0.50, ≤90→0.60, >90→0.70
+//   ③ платёж  = min( доход×КД − кредиты ,  доход−доход×10%−ПМ−кредиты )
+//   ④ цена    = платёж / коэффициент ;  взнос = цена × доля ; заём = цена − взнос
+// ═══════════════════════════════════════════
+var MORT = null;          // конфиг с сервера
+var _mortLoading = false;
+
+function initMortgage(){
+  if(MORT || _mortLoading || !token) return;
+  _mortLoading = true;
+  google.script.run
+    .withSuccessHandler(function(r){
+      _mortLoading = false;
+      if(!r || !r.ok){ el('mortLoading').innerHTML='<div class="msg on err">Не удалось загрузить ставки</div>'; return; }
+      MORT = r;
+      buildMortProgramSelect();
+      el('mortLoading').style.display='none';
+      el('mortBody').style.display='block';
+      mortRecalc();
+    })
+    .withFailureHandler(function(e){
+      _mortLoading = false;
+      el('mortLoading').innerHTML='<div class="msg on err">'+(navigator.onLine?('Ошибка: '+(e&&e.message||e)):'Нет связи с сервером')+'</div>';
+    })
+    .apiGetCalcConfig(token);
+}
+
+function buildMortProgramSelect(){
+  var sel = el('mortProgram');
+  sel.innerHTML = MORT.programs.map(function(p){
+    return '<option value="'+p.key+'">'+(p.icon||'')+' '+p.name+' — взнос '+Math.round(p.downRatio*100)+'%</option>';
+  }).join('');
+  onMortProgramChange();
+}
+
+function mortProgram(){
+  var key = el('mortProgram').value;
+  for(var i=0;i<MORT.programs.length;i++) if(MORT.programs[i].key===key) return MORT.programs[i];
+  return MORT.programs[0];
+}
+
+function onMortProgramChange(){
+  var p = mortProgram(), sel = el('mortVariant');
+  sel.innerHTML = p.variants.map(function(v,i){ return '<option value="'+i+'">'+v.label+'</option>'; }).join('');
+  el('mortVariantWrap').style.display = p.variants.length>1 ? 'block' : 'none';
+  mortRecalc();
+}
+
+// ① Прожиточный минимум семьи
+function mortPm(programKey, members){
+  var isN = (MORT.nauryzKeys||[]).indexOf(programKey) !== -1;
+  var m = Math.max(1, Math.round(Number(members)||1));
+  return MORT.mrp * (isN ? MORT.pmNauryz : MORT.pmOther) * m;
+}
+// ② Коэффициент долговой нагрузки
+function mortKd(income){
+  var k = MORT.kd, r = income / MORT.mrp;
+  if(r <= k.p1) return k.v1;
+  if(r <= k.p2) return k.v2;
+  if(r <= k.p3) return k.v3;
+  return k.v4;
+}
+// ③ Максимальный платёж — берётся худший из двух методов
+function mortMaxPayment(income, members, programKey, oldCredit){
+  var pm = mortPm(programKey, members);
+  var kd = mortKd(income);
+  var reserve = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
+  var m1 = Math.round(income * kd - oldCredit);
+  var m2 = Math.round(income - income * reserve - pm - oldCredit);
+  var max = Math.min(m1, m2);
+  return { pm:pm, kd:kd, method1:m1, method2:m2, maxPayment:max, approved:max>0,
+           limitedBy: m1 <= m2 ? 'КД (долговая нагрузка)' : 'ПМ (прожиточный минимум)' };
+}
+// ④ Из платежа — цена жилья, взнос, сумма займа
+function mortPriceFrom(payment, prog, vIdx){
+  var coeff = prog.variants[vIdx||0].coeff;
+  var price = Math.round(payment / coeff);
+  var down  = Math.round(price * prog.downRatio);
+  return { price:price, down:down, loan:price-down, rate:prog.variants[vIdx||0].label };
+}
+// Обратная задача: нужная зарплата под платёж
+function mortRequiredSalary(monthly, oldCredit, pm){
+  var reserve = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
+  var byPm = Math.round((monthly + pm + oldCredit) / (1 - reserve));
+  var byKd = Math.round((monthly + oldCredit) / MORT.kd.v4);
+  for(var i=0;i<20;i++){
+    var nk = mortKd(byKd), nr = Math.round((monthly + oldCredit) / nk);
+    if(Math.abs(nr - byKd) < 1){ byKd = nr; break; }
+    byKd = nr;
+  }
+  return Math.max(byPm, byKd);
+}
+
+function mortInputs(){
+  return {
+    members: Math.max(1, parseInt(el('mortMembers').value)||1),
+    oldCredit: Number(el('mortOldCredit').value)||0,
+    income: Number(el('mortIncome').value)||0,
+    price: Number(el('mortPrice').value)||0,
+    vIdx: parseInt(el('mortVariant').value)||0
+  };
+}
+
+// Подставить среднюю ЗП, посчитанную на вкладке «Расчёт ОПВ»
+function mortUseOpvSalary(){
+  var avg = S.lastVarResult && S.lastVarResult.avgSalary;
+  if(!avg){ showMsg('parseMsg','',''); alert('Сначала заполните ОПВ на вкладке «Расчёт ОПВ» — там появится средняя зарплата.'); return; }
+  el('mortIncome').value = avg;
+  mortRecalc();
+}
+
+function mortRecalc(){
+  if(!MORT) return;
+  var inp = mortInputs(), prog = mortProgram();
+
+  // подпись: из чего сложился прожиточный минимум
+  var pm = mortPm(prog.key, inp.members);
+  var isN = (MORT.nauryzKeys||[]).indexOf(prog.key) !== -1;
+  el('mortPmNote').innerHTML = 'Прожиточный минимум семьи: <b>'+fmtN(pm)+' ₸</b> '
+    + '<span style="opacity:.75">(МРП '+fmtN(MORT.mrp)+' × '+(isN?MORT.pmNauryz:MORT.pmOther)+' × '+inp.members+' чел.)</span>';
+
+  // ── Режим «знаю доход» ──
+  var box = el('mortIncomeResult');
+  if(inp.income > 0){
+    var c = mortMaxPayment(inp.income, inp.members, prog.key, inp.oldCredit);
+    if(!c.approved){
+      box.innerHTML = '<div class="mort-res warn">'
+        + '<div class="mort-big-lbl">Результат</div>'
+        + '<div class="mort-big">Дохода не хватает</div>'
+        + '<div class="mort-rows">'
+        + '<div class="mort-row"><span>Не хватает в месяц</span><b>'+fmtN(Math.abs(c.maxPayment))+' ₸</b></div>'
+        + '<div class="mort-row dim"><span>Ограничивает</span><b>'+c.limitedBy+'</b></div>'
+        + '<div class="mort-row dim"><span>Прожиточный минимум</span><b>'+fmtN(c.pm)+' ₸</b></div>'
+        + '</div></div>';
+    } else {
+      var r = mortPriceFrom(c.maxPayment, prog, inp.vIdx);
+      box.innerHTML = '<div class="mort-res">'
+        + '<div class="mort-big-lbl">Максимальная цена жилья</div>'
+        + '<div class="mort-big">'+fmtN(r.price)+' ₸</div>'
+        + '<div class="mort-rows">'
+        + '<div class="mort-row"><span>Первоначальный взнос ('+Math.round(prog.downRatio*100)+'%)</span><b>'+fmtN(r.down)+' ₸</b></div>'
+        + '<div class="mort-row"><span>Сумма займа</span><b>'+fmtN(r.loan)+' ₸</b></div>'
+        + '<div class="mort-row"><span>Платёж в месяц</span><b>'+fmtN(c.maxPayment)+' ₸</b></div>'
+        + '<div class="mort-row dim"><span>Ограничивает</span><b>'+c.limitedBy+'</b></div>'
+        + '<div class="mort-row dim"><span>КД '+Math.round(c.kd*100)+'% · ПМ '+fmtN(c.pm)+' ₸</span><b>'+r.rate+'</b></div>'
+        + '</div></div>';
+    }
+  } else {
+    box.innerHTML = '<div class="mort-empty">Введите доход — покажем максимальную сумму и платёж.</div>';
+  }
+
+  // ── Режим «знаю цену» ──
+  var box2 = el('mortPriceResult');
+  if(inp.price > 0){
+    var v = prog.variants[inp.vIdx] || prog.variants[0];
+    var monthly = Math.round(inp.price * v.coeff);
+    var down = Math.round(inp.price * prog.downRatio);
+    var need = mortRequiredSalary(monthly, inp.oldCredit, pm);
+    var afford = '';
+    if(inp.income > 0){
+      var cc = mortMaxPayment(inp.income, inp.members, prog.key, inp.oldCredit);
+      var ok = cc.approved && monthly <= cc.maxPayment;
+      afford = '<div class="mort-row"><span>'+(ok?'✓ Дохода хватает':'✗ Дохода не хватает')+'</span><b style="color:'+(ok?'var(--grn)':'var(--red3)')+'">'
+        + (ok ? 'проходит' : ('нужно +'+fmtN(Math.max(0, need - inp.income))+' ₸')) + '</b></div>';
+    }
+    box2.innerHTML = '<div class="mort-res">'
+      + '<div class="mort-big-lbl">Платёж в месяц</div>'
+      + '<div class="mort-big">'+fmtN(monthly)+' ₸</div>'
+      + '<div class="mort-rows">'
+      + '<div class="mort-row"><span>Первоначальный взнос ('+Math.round(prog.downRatio*100)+'%)</span><b>'+fmtN(down)+' ₸</b></div>'
+      + '<div class="mort-row"><span>Сумма займа</span><b>'+fmtN(inp.price-down)+' ₸</b></div>'
+      + '<div class="mort-row"><span>Нужный доход</span><b>'+fmtN(need)+' ₸</b></div>'
+      + afford
+      + '<div class="mort-row dim"><span>Ставка</span><b>'+v.label+'</b></div>'
+      + '</div></div>';
+  } else {
+    box2.innerHTML = '<div class="mort-empty">Введите цену жилья — посчитаем платёж и нужный доход.</div>';
+  }
+
+  renderMortCompare(inp, prog);
+}
+
+function renderMortCompare(inp, current){
+  var wrap = el('mortCompare'), hint = el('mortCompareHint');
+  if(!inp.income && !inp.price){
+    hint.textContent = '';
+    wrap.innerHTML = '<div class="mort-empty">Введите доход или цену жилья — сравним все программы.</div>';
+    return;
+  }
+  var byPrice = inp.price > 0 && !inp.income;   // если задана только цена — сравниваем по платежу
+  hint.textContent = byPrice ? 'для жилья за '+fmtN(inp.price)+' ₸' : 'по доходу '+fmtN(inp.income)+' ₸';
+
+  var rows = MORT.programs.map(function(p){
+    if(byPrice){
+      var v = p.variants[0];
+      var monthly = Math.round(inp.price * v.coeff);
+      var need = mortRequiredSalary(monthly, inp.oldCredit, mortPm(p.key, inp.members));
+      return { p:p, ok:true, main:monthly, sub:'нужен доход '+fmtN(need)+' ₸', sortVal:monthly };
+    }
+    var c = mortMaxPayment(inp.income, inp.members, p.key, inp.oldCredit);
+    if(!c.approved) return { p:p, ok:false, main:0, sub:'не хватает '+fmtN(Math.abs(c.maxPayment))+' ₸/мес', sortVal:-1 };
+    var r = mortPriceFrom(c.maxPayment, p, 0);
+    return { p:p, ok:true, main:r.price, sub:'взнос '+fmtN(r.down)+' ₸ · платёж '+fmtN(c.maxPayment)+' ₸', sortVal:r.price };
+  });
+
+  rows.sort(function(a,b){ return byPrice ? (a.sortVal - b.sortVal) : (b.sortVal - a.sortVal); });
+  var bestVal = rows.length && rows[0].ok ? rows[0].sortVal : null;
+
+  wrap.innerHTML = '<div class="mort-cmp">' + rows.map(function(r){
+    var isBest = r.ok && bestVal!==null && r.sortVal===bestVal;
+    var badge = isBest ? '<span class="mort-best">'+(byPrice?'мин. платёж':'макс. жильё')+'</span>' : '';
+    return '<div class="mort-cmp-row'+(r.p.key===current.key?' on':'')+'" onclick="selectMortProgram(\''+r.p.key+'\')">'
+      + '<div class="mort-cmp-name">'+(r.p.icon||'')+' '+r.p.name+badge+'<small>взнос '+Math.round(r.p.downRatio*100)+'%</small></div>'
+      + '<div class="mort-cmp-val'+(r.ok?'':' muted')+'">'+(r.ok ? fmtN(r.main)+' ₸' : '—')+'</div>'
+      + '<div class="mort-cmp-sub">'+r.sub+'</div>'
+      + '</div>';
+  }).join('') + '</div>';
+}
+
+function selectMortProgram(key){
+  el('mortProgram').value = key;
+  onMortProgramChange();
+}
 
 // ═══════════════════════════════════════════
 //  ПАРСЕР ПКБ/ГКБ (онлайн, Cloud Run)
