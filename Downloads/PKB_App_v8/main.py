@@ -1472,17 +1472,35 @@ def fill_anketa_from_pension(output_path: Path, pension: Dict[str, Any], sort_ro
         ("G29", "G", "H", "I"),   # org 3
     ]
 
+    def _org_period_range(org_rows: List[PensionRow]) -> Optional[str]:
+        """Дата начала — дата завершения периода взносов по организации
+        (по фактическому минимуму/максимуму дат, а не по порядку строк)."""
+        from datetime import datetime as _dt
+        parsed = []
+        for rr in org_rows:
+            try:
+                parsed.append(_dt.strptime(rr.date, "%d.%m.%Y"))
+            except Exception:
+                continue
+        if not parsed:
+            return None
+        start, end = min(parsed), max(parsed)
+        return f"{start.strftime('%d.%m.%Y')} — {end.strftime('%d.%m.%Y')}"
+
     total_srzp = 0
     org_srzp_list: List[str] = []
 
     for idx, bin_key in enumerate(org_names):
         org_cell, date_col, sum_col, period_col = col_map[idx]
 
-        # Получаем читаемое название по BIN
-        org_display = get_org_display_name(bin_key, rows)
-        safe_set(ws, org_cell, org_display)
-
         org_rows = groups[bin_key]
+
+        # Получаем читаемое название по BIN + период (начало — завершение) в той же ячейке
+        org_display = get_org_display_name(bin_key, rows)
+        period_range = _org_period_range(org_rows)
+        org_label = f"{org_display} ({period_range})" if period_range else org_display
+        safe_set(ws, org_cell, org_label)
+
         if sort_rows:
             from datetime import datetime as _dt
             def dkey(rr: PensionRow) -> "_dt":
@@ -1508,15 +1526,15 @@ def fill_anketa_from_pension(output_path: Path, pension: Dict[str, Any], sort_ro
         srzp = calc_pension_avg_vals(vals)
         total_srzp += srzp
         org_srzp_list.append(f"{org_display}: {srzp:,}")
-        LOGGER.info("Пенсионка БИН=%s (%s): строк=%s СРЗП=%s",
-                    bin_key, org_display, len(vals), srzp)
+        LOGGER.info("Пенсионка БИН=%s (%s, %s): строк=%s СРЗП=%s",
+                    bin_key, org_display, period_range, len(vals), srzp)
 
     # Строка СРЗП: A43 = метка, B43 = значение
-    # Если несколько орг — показываем каждую + итог
+    # Если несколько орг — явно показываем сложение: "ОРГ1: X + ОРГ2: Y = ИТОГО"
     safe_set(ws, "A43", "СРЗП")
     if len(org_names) > 1:
-        detail = " | ".join(org_srzp_list)
-        safe_set(ws, "B43", f"{total_srzp:,}  ({detail})")
+        formula = " + ".join(org_srzp_list) + f" = {total_srzp:,}"
+        safe_set(ws, "B43", formula)
     else:
         safe_set(ws, "B43", total_srzp)
 
