@@ -732,6 +732,28 @@ body {
 .pr-bad { color:var(--red3); font-weight:700; }
 .pr-st { color:var(--muted); }
 .pr-demo { background:var(--gold5); border:1px solid var(--gold3); color:var(--gold); border-radius:10px; padding:10px 14px; font-size:12px; line-height:1.5; margin-bottom:14px; }
+
+/* ── Блок анализа отчёта ── */
+.pr-verdict { display:flex; gap:14px; align-items:flex-start; border-radius:12px; padding:16px 18px; margin-bottom:16px; border:1px solid; }
+.pr-verdict.ok   { background:var(--ok_bg,#F0FDF4); border-color:#BBF7D0; }
+.pr-verdict.warn { background:var(--warn_bg,#FFFBEB); border-color:#FDE68A; }
+.pr-verdict.bad  { background:var(--err_bg,#FEF2F2); border-color:#FECACA; }
+.pr-verdict-ico { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:17px; font-weight:800; }
+.pr-verdict.ok   .pr-verdict-ico { background:#DCFCE7; color:#166534; }
+.pr-verdict.warn .pr-verdict-ico { background:#FEF3C7; color:#92400E; }
+.pr-verdict.bad  .pr-verdict-ico { background:#FEE2E2; color:#991B1B; }
+.pr-verdict-title { font-weight:800; font-size:14.5px; }
+.pr-verdict.ok   .pr-verdict-title { color:#166534; }
+.pr-verdict.warn .pr-verdict-title { color:#92400E; }
+.pr-verdict.bad  .pr-verdict-title { color:#991B1B; }
+.pr-verdict-sub { font-size:12px; color:var(--ink2); margin-top:2px; }
+.pr-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:16px; }
+.pr-stat { background:var(--surf,#fff); border:1px solid var(--bdr); border-radius:10px; padding:10px 12px; }
+.pr-stat span { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; display:block; }
+.pr-stat b { font-size:15px; color:var(--ink); font-variant-numeric:tabular-nums; display:block; margin-top:3px; }
+.pr-stat b.pr-bad { color:var(--red3); }
+.pr-sec-sub { font-size:11px; color:var(--muted); font-weight:500; margin-left:6px; }
+.pr-table tfoot td { border-top:2px solid var(--ink); font-weight:800; background:var(--v4,#F1EAFB); }
 .consent-row { display:flex; gap:8px; align-items:flex-start; margin-top:14px; font-size:12px; color:var(--ink2); line-height:1.5; cursor:pointer; }
 .consent-row input { margin-top:2px; flex-shrink:0; width:16px; height:16px; accent-color:var(--v); }
 </style>
@@ -1599,29 +1621,78 @@ function renderParse(d){
   var iin = d.iin ? (d.iin.length===12 ? ('********'+d.iin.slice(-4)) : d.iin) : '—';
   var src = (d.source==='gkb') ? 'ГКБ · МКБ' : 'ПКБ · 1cb.kz';
   _parseName = 'anketa_'+(d.iin? d.iin.slice(-4):'client')+'.xlsx';
+
+  var active = d.active || [];
+  var compRecent = d.completed_recent || [];
+  var compOld = d.completed_old || [];
+
+  // ── Анализ: объективные факты из уже распознанных данных, без оценочных суждений ──
+  var activeOverdue = active.filter(function(c){ return (c.current_overdue_days||0) > 0; });
+  var totalOutstanding = active.reduce(function(s,c){ return s + (Number(c.outstanding)||0); }, 0);
+  var problemCount = activeOverdue.length + compRecent.length + compOld.length;
+  var dtiPct = (d.srzp && d.monthly_load) ? Math.round(d.monthly_load / d.srzp * 100) : null;
+
+  var verdictClass, verdictIco, verdictTitle, verdictSub;
+  if (activeOverdue.length) {
+    verdictClass = 'bad'; verdictIco = '!';
+    verdictTitle = 'Есть текущая просрочка по действующему договору';
+    verdictSub = activeOverdue.length + ' из ' + active.length + ' действующих договоров с просрочкой на дату отчёта';
+  } else if (problemCount > 0) {
+    verdictClass = 'warn'; verdictIco = '~';
+    verdictTitle = 'Просрочек по действующим договорам нет, но есть история проблем';
+    verdictSub = (compRecent.length+compOld.length) + ' завершённых договоров с прошлой просрочкой или цессией';
+  } else {
+    verdictClass = 'ok'; verdictIco = '✓';
+    verdictTitle = 'Чистая кредитная история';
+    verdictSub = 'Просрочек и цессий в разобранном отчёте не найдено';
+  }
+
   var h = demoNote + '<div class="pr-head"><span class="pr-src">'+src+'</span>'
     + '<div class="pr-kv"><span>ФИО</span><b>'+(d.fio||'—')+'</b></div>'
     + '<div class="pr-kv"><span>ИИН</span><b>'+iin+'</b></div>'
     + '<div class="pr-kv"><span>ПКР</span><b>'+(d.pkr||'—')+'</b></div>'
-    + '<div class="pr-kv"><span>Нагрузка/мес</span><b>'+fmt(d.monthly_load)+'</b></div>'
-    + (d.srzp?'<div class="pr-kv"><span>СРЗП</span><b>'+fmt(d.srzp)+'</b></div>':'')
     + '</div>';
-  if((d.active||[]).length){
-    h += '<div class="pr-sec">Действующие ('+d.active.length+')</div><div class="pr-table-wrap"><table class="pr-table"><thead><tr><th>Банк</th><th>Тип</th><th>Сумма</th><th>Платёж</th><th>Остаток</th><th>Просрочка</th></tr></thead><tbody>';
-    d.active.forEach(function(c){ h+='<tr><td>'+(c.creditor||'—')+'</td><td>'+(c.financing_type||'')+'</td><td>'+fmtN(c.contract_amount)+'</td><td>'+fmtN(c.periodic_payment)+'</td><td>'+fmtN(c.outstanding)+'</td><td>'+((c.current_overdue_days||0)>0?('<span class="pr-bad">'+c.current_overdue_days+' дн.</span>'):'—')+'</td></tr>'; });
-    h += '</tbody></table></div>';
+
+  h += '<div class="pr-verdict '+verdictClass+'">'
+    + '<div class="pr-verdict-ico">'+verdictIco+'</div>'
+    + '<div><div class="pr-verdict-title">'+verdictTitle+'</div><div class="pr-verdict-sub">'+verdictSub+'</div></div>'
+    + '</div>';
+
+  h += '<div class="pr-stats">'
+    + '<div class="pr-stat"><span>Действующих</span><b>'+active.length+'</b></div>'
+    + '<div class="pr-stat"><span>Остаток долга</span><b>'+fmtN(totalOutstanding)+' ₸</b></div>'
+    + '<div class="pr-stat"><span>Нагрузка/мес</span><b>'+fmtN(d.monthly_load)+' ₸</b></div>'
+    + (d.srzp ? '<div class="pr-stat"><span>СРЗП</span><b>'+fmtN(d.srzp)+' ₸</b></div>' : '')
+    + (dtiPct!==null ? '<div class="pr-stat"><span>Нагрузка / СРЗП</span><b'+(dtiPct>50?' class="pr-bad"':'')+'>'+dtiPct+'%</b></div>' : '')
+    + '<div class="pr-stat"><span>Проблемных записей</span><b'+(problemCount>0?' class="pr-bad"':'')+'>'+problemCount+'</b></div>'
+    + '</div>';
+
+  if(active.length){
+    h += '<div class="pr-sec">Действующие ('+active.length+')</div><div class="pr-table-wrap"><table class="pr-table"><thead><tr><th>Банк</th><th>Тип</th><th>Сумма</th><th>Платёж</th><th>Остаток</th><th>Просрочка</th></tr></thead><tbody>';
+    var sumAmount=0, sumPayment=0, sumOutstanding=0;
+    active.forEach(function(c){
+      sumAmount += Number(c.contract_amount)||0;
+      sumPayment += Number(c.periodic_payment)||0;
+      sumOutstanding += Number(c.outstanding)||0;
+      h+='<tr><td>'+(c.creditor||'—')+'</td><td>'+(c.financing_type||'')+'</td><td>'+fmtN(c.contract_amount)+'</td><td>'+fmtN(c.periodic_payment)+'</td><td>'+fmtN(c.outstanding)+'</td><td>'+((c.current_overdue_days||0)>0?('<span class="pr-bad">'+c.current_overdue_days+' дн.'+(c.current_overdue_amount?' · '+fmtN(c.current_overdue_amount)+' ₸':'')+'</span>'):'—')+'</td></tr>';
+    });
+    h += '</tbody><tfoot><tr><td colspan="2">Итого</td><td>'+fmtN(sumAmount)+'</td><td>'+fmtN(sumPayment)+'</td><td>'+fmtN(sumOutstanding)+'</td><td></td></tr></tfoot></table></div>';
   }
-  var comp=(d.completed_recent||[]).concat(d.completed_old||[]);
-  if(comp.length){
-    h += '<div class="pr-sec">Завершённые с просрочкой / цессией ('+comp.length+')</div><div class="pr-table-wrap"><table class="pr-table"><thead><tr><th>Банк</th><th>Тип</th><th>Макс. просрочка</th><th>Статус</th></tr></thead><tbody>';
-    comp.forEach(function(c){
+
+  function renderCompletedTable(list, label){
+    if(!list.length) return '';
+    var out = '<div class="pr-sec">'+label+' <span class="pr-sec-sub">('+list.length+')</span></div><div class="pr-table-wrap"><table class="pr-table"><thead><tr><th>Банк</th><th>Тип</th><th>Макс. просрочка</th><th>Статус</th></tr></thead><tbody>';
+    list.forEach(function(c){
       // "Статус" из PDF иногда содержит "слипшийся" текст из соседних колонок —
       // показываем только цессию (как в Excel), без сырого статуса из отчёта.
       var st = c.cessionary ? ('Цессия → '+c.cessionary) : '—';
-      h+='<tr><td>'+(c.creditor||'—')+'</td><td>'+(c.financing_type||'')+'</td><td>'+((c.max_overdue_days||0)>0?('<span class="pr-bad">'+c.max_overdue_days+' дн.</span>'):'—')+'</td><td class="pr-st">'+st+'</td></tr>';
+      out+='<tr><td>'+(c.creditor||'—')+'</td><td>'+(c.financing_type||'')+'</td><td>'+((c.max_overdue_days||0)>0?('<span class="pr-bad">'+c.max_overdue_days+' дн.'+(c.max_overdue_amount?' · '+fmtN(c.max_overdue_amount)+' ₸':'')+'</span>'):'—')+'</td><td class="pr-st">'+st+'</td></tr>';
     });
-    h += '</tbody></table></div>';
+    return out + '</tbody></table></div>';
   }
+  h += renderCompletedTable(compRecent, 'Завершённые — до 5 лет назад');
+  h += renderCompletedTable(compOld, 'Завершённые — более 5 лет назад');
+
   h += '<button class="btn btn-v" style="margin-top:16px" onclick="downloadExcel()">⬇ Скачать Excel-анкету</button>';
   el('parseResult').innerHTML=h; el('parseResult').style.display='block';
 }
