@@ -855,6 +855,62 @@ body {
   .prs-seg { padding:8px 9px; font-size:11.5px; }
 }
 
+/* ── База анкет ── */
+.ank-bar { display:flex; gap:10px; align-items:center; margin-bottom:14px; }
+.ank-search { flex:1; }
+.ank-count { font-size:11px; color:var(--muted); font-weight:600; margin-bottom:8px; }
+.ank-list { display:flex; flex-direction:column; gap:8px; }
+.ank-item {
+  display:flex; align-items:center; gap:12px;
+  border:1px solid var(--bdr); border-radius:10px; padding:11px 13px;
+  background:var(--surf); transition:.15s;
+}
+.ank-item:hover { border-color:var(--v); background:var(--v4,#FAF5FF); }
+.ank-main { flex:1; min-width:0; cursor:pointer; }
+.ank-main:focus-visible { outline:2px solid var(--v2); outline-offset:3px; border-radius:6px; }
+.ank-fio { font-size:13.5px; font-weight:700; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ank-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+.ank-nums { display:flex; gap:16px; flex-shrink:0; }
+.ank-nums > div { display:flex; flex-direction:column; align-items:flex-end; }
+.ank-nums span { font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+.ank-nums b { font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--ink2); }
+.ank-del {
+  flex-shrink:0; width:30px; height:30px; border:0; border-radius:8px; cursor:pointer;
+  background:transparent; color:var(--muted); font-size:14px; line-height:1; transition:.15s;
+}
+.ank-del:hover { background:var(--err_bg,#FEF2F2); color:#991B1B; }
+.ank-del:focus-visible { outline:2px solid var(--v2); outline-offset:1px; }
+.ank-log { margin-top:20px; border-top:1px solid var(--bdr); padding-top:12px; }
+.ank-log summary { cursor:pointer; font-size:12.5px; font-weight:700; color:var(--ink2); padding:6px 0; }
+.ank-log summary:focus-visible { outline:2px solid var(--v2); outline-offset:2px; border-radius:4px; }
+@media (max-width:560px){
+  .ank-item { flex-wrap:wrap; }
+  .ank-main { flex-basis:100%; }
+  .ank-nums { gap:14px; }
+  .ank-nums > div { align-items:flex-start; }
+}
+
+/* Копирование ФИО/ИИН по клику */
+.pr-kv-copy { cursor:pointer; position:relative; border-radius:8px; transition:.15s; }
+.pr-kv-copy:hover { background:rgba(124,58,237,.07); }
+.pr-kv-copy:focus-visible { outline:2px solid var(--v2); outline-offset:2px; }
+.pr-kv-ico { font-style:normal; font-size:10px; color:var(--muted); margin-left:5px; }
+.pr-kv-copy.copied { background:var(--ok_bg,#F0FDF4); }
+.pr-kv-copy.copied .pr-kv-ico::after { content:' скопировано'; color:#166534; font-weight:700; }
+
+/* Перетаскивание файла на зону загрузки */
+.up-zone.drag { border-color:var(--v); background:var(--v4,#FAF5FF); box-shadow:0 0 0 3px rgba(124,58,237,.12); }
+
+/* Второй ряд действий под отчётом */
+.pr-actions-2 { margin-top:8px; flex-wrap:wrap; }
+.pr-actions-2 .btn { font-size:12.5px; }
+
+/* Пометка «анкета из базы» */
+.pr-frombase {
+  background:var(--v-soft,#F5F3FF); border:1px solid var(--bdr); border-radius:10px;
+  padding:10px 13px; margin-bottom:12px; font-size:12px; color:var(--ink2); line-height:1.55;
+}
+
 /* Печатный отчёт: две колонки в блоке доступного платежа */
 .cr-hl-two { display:flex; gap:44px; justify-content:center; flex-wrap:wrap; margin:8px 0 12px; }
 .cr-hl-two > div { display:flex; flex-direction:column; align-items:center; gap:3px; }
@@ -1334,11 +1390,26 @@ body {
 <div id="vHist" class="panel" style="display:none">
   <div class="hero">
     <div class="hero-ico"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/><path d="M12 8v4.5l3 1.8"/></svg></div>
-    <div><h2>История расчётов</h2><p>Последние 30 операций вашего аккаунта</p></div>
+    <div><h2>База анкет</h2><p>Разобранные отчёты — можно открыть заново в любой момент</p></div>
   </div>
-  <div id="histContent">
-    <div class="empty"><div class="eico"><span class="spin dark"></span></div><p>Загружаем историю...</p></div>
+
+  <div class="ank-bar">
+    <div class="ank-search">
+      <input class="inp" id="ankQuery" type="search" placeholder="Поиск по ФИО или ИИН"
+             autocomplete="off" oninput="ankSearchDebounced()">
+    </div>
+    <button class="kbtn" onclick="loadAnketas()">Обновить</button>
   </div>
+  <div id="ankContent">
+    <div class="empty"><div class="eico"><span class="spin dark"></span></div><p>Загружаем анкеты...</p></div>
+  </div>
+
+  <details class="ank-log" ontoggle="if(this.open) loadHistory()">
+    <summary>Журнал операций</summary>
+    <div id="histContent">
+      <div class="empty"><p>Загружаем…</p></div>
+    </div>
+  </details>
 </div>
 
 <!-- ═════ ДЕПОЗИТЫ (калькулятор вознаграждения) ═════ -->
@@ -1867,7 +1938,7 @@ function goTab(name){
   p.style.display='block'; p.classList.add('on');
   closeMore();
   try{ window.scrollTo(0,0); }catch(e){}
-  if(name==='hist') loadHistory();
+  if(name==='hist') loadAnketas();      // журнал грузится по раскрытию, см. ниже
   if(name==='dep')  loadTool('DepositCalc','depFrame','depLoading');
   if(name==='blank')loadTool('DepositBlanks','blankFrame','blankLoading');
   if(name==='mort') initMortgage();
@@ -2151,6 +2222,53 @@ var _parseExcel = null, _parseName = 'anketa.xlsx';
 
 var _batchFiles = [];   // несколько отчётов за раз
 
+// Перетаскивание PDF прямо на зону загрузки — быстрее, чем диалог выбора.
+// Работает и для нескольких файлов сразу (пакетная обработка).
+function initDropZones(){
+  [['upCredit','fileCredit','credit'], ['upPension','filePension','pension']].forEach(function(z){
+    var zone = el(z[0]), input = el(z[1]), kind = z[2];
+    if(!zone || !input) return;
+
+    ['dragenter','dragover'].forEach(function(ev){
+      zone.addEventListener(ev, function(e){
+        e.preventDefault(); e.stopPropagation();
+        zone.classList.add('drag');
+      });
+    });
+    ['dragleave','drop'].forEach(function(ev){
+      zone.addEventListener(ev, function(e){
+        e.preventDefault(); e.stopPropagation();
+        if(ev === 'dragleave' && zone.contains(e.relatedTarget)) return;
+        zone.classList.remove('drag');
+      });
+    });
+
+    zone.addEventListener('drop', function(e){
+      var dt = e.dataTransfer;
+      if(!dt || !dt.files || !dt.files.length) return;
+      var pdfs = Array.prototype.filter.call(dt.files, function(f){
+        return /\.pdf$/i.test(f.name) || f.type === 'application/pdf';
+      });
+      if(!pdfs.length){ showMsg('parseMsg','Перетащите PDF-файл','err'); return; }
+      if(kind === 'pension') pdfs = pdfs.slice(0,1);      // пенсионка всегда одна
+
+      try{
+        var dtl = new DataTransfer();
+        pdfs.forEach(function(f){ dtl.items.add(f); });
+        input.files = dtl.files;
+        onFilePick(input, kind);
+      }catch(err){
+        // старый браузер без DataTransfer — работаем напрямую с объектом файла
+        _parseFiles[kind] = pdfs[0];
+        if(kind === 'credit') _batchFiles = pdfs.length > 1 ? pdfs : [];
+        el(kind === 'credit' ? 'upCreditName' : 'upPensionName').textContent =
+          pdfs.length > 1 ? ('Выбрано файлов: ' + pdfs.length) : pdfs[0].name;
+        zone.classList.add('has');
+      }
+    });
+  });
+}
+
 function onFilePick(input, kind){
   var files = input.files ? Array.prototype.slice.call(input.files) : [];
   var f = files[0] || null;
@@ -2309,9 +2427,17 @@ function doParse(){
 function renderParse(d){
   _parseExcel = d.excel_b64;
   var demoNote = d._demo ? '<div class="pr-demo">⚠️ Демо-режим: показан <b>пример разбора</b>, ваш файл в браузере не обрабатывается. После подключения сервера здесь будет разбор именно вашего PDF.</div>' : '';
+  // Открыто из базы: данные есть, а Excel не хранится — его нужно пересобрать из PDF
+  if(d._fromBase){
+    demoNote += '<div class="pr-frombase">📁 Анкета из базы, сохранена ' + d._fromBase
+              + '. Excel не хранится — чтобы получить файл, разберите PDF заново.</div>';
+  }
   var iin = d.iin ? (d.iin.length===12 ? ('********'+d.iin.slice(-4)) : d.iin) : '—';
   var src = (d.source==='gkb') ? 'ГКБ · МКБ' : 'ПКБ · 1cb.kz';
-  _parseName = 'anketa_'+(d.iin? d.iin.slice(-4):'client')+'.xlsx';
+  // Имя файла по клиенту — искать в папке «Загрузки» проще, чем по цифрам ИИН
+  var fioSafe = String(d.fio || '').replace(/&[a-z]+;/gi,'').trim()
+                  .replace(/\s+/g,'_').replace(/[^0-9A-Za-zА-Яа-яЁё_-]/g,'').slice(0,40);
+  _parseName = 'Анкета_' + (fioSafe || ('client_' + (d.iin ? d.iin.slice(-4) : ''))) + '.xlsx';
 
   var active = d.active || [];
   var compRecent = d.completed_recent || [];
@@ -2338,9 +2464,17 @@ function renderParse(d){
     verdictSub = 'Просрочек и цессий в разобранном отчёте не найдено';
   }
 
+  // ФИО и ИИН копируются в клик — их перебивают в банковские заявки
+  var copyKv = function(label, shown, full){
+    if(!full) return '<div class="pr-kv"><span>'+label+'</span><b>'+shown+'</b></div>';
+    return '<div class="pr-kv pr-kv-copy" role="button" tabindex="0" title="Нажмите, чтобы скопировать"'
+         + ' onclick="copyVal(this,\''+String(full).replace(/'/g,"\\'")+'\')"'
+         + ' onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.click()}">'
+         + '<span>'+label+'</span><b>'+shown+'</b><i class="pr-kv-ico">⧉</i></div>';
+  };
   var h = demoNote + '<div class="pr-head"><span class="pr-src">'+src+'</span>'
-    + '<div class="pr-kv"><span>ФИО</span><b>'+(d.fio||'—')+'</b></div>'
-    + '<div class="pr-kv"><span>ИИН</span><b>'+iin+'</b></div>'
+    + copyKv('ФИО', (d.fio||'—'), d.fio)
+    + copyKv('ИИН', iin, d.iin)
     + '<div class="pr-kv"><span>ПКР</span><b>'+(d.pkr||'—')+'</b></div>'
     + '</div>';
 
@@ -2393,18 +2527,114 @@ function renderParse(d){
   h += renderCompletedTable(compOld, 'Завершённые — более 5 лет назад');
 
   h += '<div class="pr-actions">'
-    + '<button class="btn btn-v" onclick="downloadExcel()">⬇ Скачать Excel-анкету</button>'
+    + (d._fromBase
+        ? '<button class="btn btn-v" disabled title="Excel не хранится в базе — разберите PDF заново">⬇ Excel недоступен</button>'
+        : '<button class="btn btn-v" onclick="downloadExcel()">⬇ Скачать Excel-анкету</button>')
     + '<button class="btn btn-ghost pr-act-2" onclick="printClientReport()">📄 Отчёт для клиента</button>'
+    + '</div>'
+    + '<div class="pr-actions pr-actions-2">'
+    + '<button class="btn btn-ghost" onclick="toMortgage()">🏠 Посчитать ипотеку по этому клиенту</button>'
+    + '<button class="btn btn-ghost" onclick="shareWhatsApp()">💬 Отправить клиенту</button>'
+    + '<button class="btn btn-ghost" onclick="nextClient()">↻ Следующий клиент</button>'
     + '</div>';
   el('parseResult').innerHTML=h; el('parseResult').style.display='block';
   _lastParse = d;   // для печатного отчёта
   logParseToHistory(d);
 }
 
+// ── Копирование значения в буфер с подтверждением прямо на плашке ──
+function copyVal(node, val){
+  var plain = String(val).replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+                         .replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+  var done = function(){
+    node.classList.add('copied');
+    setTimeout(function(){ node.classList.remove('copied'); }, 1200);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(plain).then(done, function(){ fallback(); });
+  } else { fallback(); }
+
+  function fallback(){                       // старые браузеры и http-страницы
+    var ta = document.createElement('textarea');
+    ta.value = plain; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){}
+    ta.remove();
+  }
+}
+
+// ── Переход в ипотеку с уже разобранными цифрами ──
+// Раньше доход и платежи переписывали руками — отсюда опечатки.
+function toMortgage(){
+  var d = _lastParse;
+  if(!d){ return; }
+  goTab('mort');
+  initMortgage();
+  var set = function(id, val){
+    var e = el(id); if(!e) return;
+    e.value = val;
+  };
+  set('mortIncome', Math.round(Number(d.srzp) || 0) || '');
+  set('mortOldCredit', Math.round(Number(d.monthly_load) || 0) || 0);
+  set('mortMembers', PRS.members);
+  if(typeof mortRecalc === 'function') mortRecalc();
+  var box = el('mortIncome');
+  if(box) box.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+// ── Короткая выжимка клиенту в WhatsApp ──
+function shareWhatsApp(){
+  var d = _lastParse;
+  if(!d) return;
+  var income = Number(d.srzp) || 0, load = Number(d.monthly_load) || 0;
+  var c = prsMain(income, load);
+  var un = function(s){ // снимаем экранирование — в мессенджер уходит обычный текст
+    return String(s||'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+                        .replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+  };
+  var L = [];
+  L.push('Анализ кредитной истории' + (d.fio ? (' — ' + un(d.fio)) : ''));
+  if(d.pkr) L.push('Кредитный рейтинг ПКР: ' + d.pkr);
+  L.push('');
+  L.push('Действующих договоров: ' + ((d.active||[]).length));
+  if(load)   L.push('Платежи в месяц: ' + fmtN(load) + ' ₸');
+  if(income) L.push('Средняя зарплата (ЕНПФ): ' + fmtN(income) + ' ₸');
+  if(c && c.limit > 0){
+    L.push('');
+    L.push('Доступный платёж по новому кредиту: ' + fmtN(c.limit) + ' ₸/мес');
+    L.push('(расчёт на семью ' + PRS.members + ' чел., ПМ ×' + c.k + ')');
+  } else if(c){
+    L.push('');
+    L.push('Свободного запаса на новый платёж сейчас нет — не хватает '
+           + fmtN(Math.abs(c.limit)) + ' ₸/мес.');
+  }
+  L.push('');
+  L.push('Расчёт справочный, окончательное решение принимает банк.');
+  window.open('https://wa.me/?text=' + encodeURIComponent(L.join('\n')), '_blank');
+}
+
+// ── Сброс формы под следующего клиента ──
+// Согласие снимаем намеренно: под каждого клиента оно должно отмечаться заново.
+function nextClient(){
+  _parseFiles = { credit:null, pension:null };
+  _batchFiles = []; _lastParse = null; _parseExcel = null; _lastAnketaId = null;
+  ['fileCredit','filePension'].forEach(function(id){ var e = el(id); if(e) e.value = ''; });
+  var cn = el('upCreditName');  if(cn) cn.textContent = 'Нажмите или перетащите файл · можно сразу несколько';
+  var pn = el('upPensionName'); if(pn) pn.textContent = 'Необязательно · для средней зарплаты';
+  ['upCredit','upPension'].forEach(function(id){ var e = el(id); if(e) e.classList.remove('has'); });
+  var chk = el('consentChk'); if(chk) chk.checked = false;
+  var btn = el('btnParse'); if(btn) btn.textContent = 'Распознать отчёт';
+  el('parseResult').style.display = 'none';
+  el('parseResult').innerHTML = '';
+  hideMsg('parseMsg');
+  var up = el('upCredit'); if(up) up.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
 // Пишем разбор в историю — чтобы потом было видно, чьи отчёты проверяли.
 // Демо-режим не логируем: там разбор не настоящий.
 function logParseToHistory(d){
-  if(!token || !d || d._demo) return;
+  // _fromBase — анкету только что открыли из базы, второй раз сохранять не нужно
+  if(!token || !d || d._demo || d._fromBase) return;
   var problems = (d.active||[]).filter(function(c){ return (c.current_overdue_days||0) > 0; }).length
                + (d.completed_recent||[]).length + (d.completed_old||[]).length;
   google.script.run
@@ -2415,6 +2645,117 @@ function logParseToHistory(d){
       active: (d.active||[]).length, problems: problems,
       srzp: d.srzp || 0, load: d.monthly_load || 0
     });
+  saveAnketa(d);
+}
+
+// ═══════════════════════════════════════════
+//  БАЗА АНКЕТ
+//  Разбор сохраняется целиком, чтобы к клиенту можно было вернуться
+//  через неделю и не просить PDF заново.
+// ═══════════════════════════════════════════
+
+// Excel в базу не кладём — он тяжёлый; при открытии предлагаем разобрать заново
+function _ankStrip(d){
+  var o = {};
+  for(var k in d) if(Object.prototype.hasOwnProperty.call(d,k) && k !== 'excel_b64') o[k] = d[k];
+  return o;
+}
+
+function saveAnketa(d){
+  if(!token || !d || d._demo) return;
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r && r.ok) _lastAnketaId = r.id;
+    })
+    .withFailureHandler(function(){})   // сохранение не должно ломать разбор
+    .apiSaveAnketa(token, {
+      fio: d.fio, iin: d.iin, source: d.source, pkr: d.pkr,
+      active: (d.active||[]).length,
+      srzp: d.srzp || 0, load: d.monthly_load || 0,
+      data: _ankStrip(d)
+    });
+}
+
+var _lastAnketaId = null, _ankTimer = null;
+
+function ankSearchDebounced(){
+  clearTimeout(_ankTimer);
+  _ankTimer = setTimeout(loadAnketas, 350);   // не дёргаем сервер на каждую букву
+}
+
+function loadAnketas(){
+  if(!token) return;
+  var box = el('ankContent');
+  box.innerHTML = '<div class="empty"><div class="eico"><span class="spin dark"></span></div><p>Загружаем анкеты...</p></div>';
+  var q = el('ankQuery') ? el('ankQuery').value : '';
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(!r || !r.ok){ box.innerHTML = '<div class="empty"><p>Не удалось загрузить базу</p></div>'; return; }
+      renderAnketas(r.items || [], q);
+    })
+    .withFailureHandler(function(){
+      box.innerHTML = '<div class="empty"><p>Нет связи с сервером</p></div>';
+    })
+    .apiListAnketas(token, q);
+}
+
+function renderAnketas(items, q){
+  var box = el('ankContent');
+  if(!items.length){
+    box.innerHTML = '<div class="empty"><div class="eico">📁</div><p>'
+      + (q ? 'По запросу ничего не найдено' : 'Пока пусто — разберите первый отчёт, он сохранится сюда')
+      + '</p></div>';
+    return;
+  }
+  var rows = items.map(function(a){
+    var problems = '';
+    return '<div class="ank-item">'
+      + '<div class="ank-main" onclick="openAnketa(\''+a.id+'\')" role="button" tabindex="0" '
+      +      'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openAnketa(\''+a.id+'\')}">'
+      +   '<div class="ank-fio">'+(a.fio || '—')+'</div>'
+      +   '<div class="ank-meta">'+a.date+' · '+a.bureau
+      +     (a.iin ? (' · ИИН '+a.iin) : '')
+      +     (a.pkr ? (' · ПКР '+a.pkr) : '') + '</div>'
+      + '</div>'
+      + '<div class="ank-nums">'
+      +   '<div><span>договоров</span><b>'+(a.active||0)+'</b></div>'
+      +   '<div><span>СРЗП</span><b>'+(a.srzp ? fmtN(a.srzp) : '—')+'</b></div>'
+      +   '<div><span>платежи</span><b>'+(a.load ? fmtN(a.load) : '—')+'</b></div>'
+      + '</div>'
+      + '<button class="ank-del" title="Удалить анкету" aria-label="Удалить анкету '
+      +   (a.fio||'')+'" onclick="deleteAnketa(\''+a.id+'\')">✕</button>'
+      + '</div>';
+  }).join('');
+  box.innerHTML = '<div class="ank-count">Найдено: '+items.length+'</div><div class="ank-list">'+rows+'</div>';
+}
+
+function openAnketa(id){
+  if(!token) return;
+  showMsg('parseMsg','Открываем анкету…','warn');
+  goTab('parser');
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(!r || !r.ok){ showMsg('parseMsg', (r && r.message) || 'Не удалось открыть анкету','err'); return; }
+      hideMsg('parseMsg');
+      var d = r.data || {};
+      d._fromBase = r.date || '';       // пометка: это сохранённый разбор
+      renderParse(d);
+      el('parseResult').scrollIntoView({ behavior:'smooth', block:'start' });
+    })
+    .withFailureHandler(function(){ showMsg('parseMsg','Нет связи с сервером','err'); })
+    .apiGetAnketa(token, id);
+}
+
+function deleteAnketa(id){
+  if(!token) return;
+  if(!confirm('Удалить анкету из базы? Отменить будет нельзя.')) return;
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r && r.ok) loadAnketas();
+      else alert((r && r.message) || 'Не удалось удалить');
+    })
+    .withFailureHandler(function(){ alert('Нет связи с сервером'); })
+    .apiDeleteAnketa(token, id);
 }
 
 // ═══════════════════════════════════════════
@@ -3384,6 +3725,7 @@ function tryAutoLogin(){
 }
 
 (function init(){
+  try{ initDropZones(); }catch(e){}
   if(!token){ tryAutoLogin(); return; }
   google.script.run
     .withSuccessHandler(function(r){

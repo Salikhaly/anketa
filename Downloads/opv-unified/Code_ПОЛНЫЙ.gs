@@ -319,6 +319,13 @@ function doGet(e){
   return t.evaluate()
     .setTitle('Единый сервис')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    // Ярлык на телефоне: цвет строки состояния и запуск без адресной строки.
+    // Полноценный PWA на Apps Script недоступен — страница живёт в iframe Google,
+    // но ярлык «На главный экран» открывает сервис в один тап.
+    .addMetaTag('theme-color', '#3B0764')
+    .addMetaTag('apple-mobile-web-app-capable', 'yes')
+    .addMetaTag('apple-mobile-web-app-status-bar-style', 'black-translucent')
+    .addMetaTag('apple-mobile-web-app-title', 'Сервис')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -850,6 +857,134 @@ function apiGetPdfData(token,payload){
     date:Utilities.formatDate(new Date(),'Asia/Almaty','dd.MM.yyyy HH:mm'),
     payload:payload
   };
+}
+
+// ============================================================
+//  БАЗА АНКЕТ — разобранные отчёты можно открыть заново
+//  Каждый брокер видит только свои анкеты (фильтр по ключу).
+//  Внимание: здесь лежат персональные данные клиентов (ФИО, ИИН).
+//  Таблица должна оставаться закрытой — никому не давать доступ.
+// ============================================================
+
+var ANKETA_LIMIT = 500;        // сколько последних анкет держим на брокера
+var ANKETA_JSON_MAX = 45000;   // предел ячейки Google Sheets ~50 000 символов
+
+function _getAnketasSheet_(){
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sh = ss.getSheetByName('Анкеты');
+  if (!sh) {
+    sh = ss.insertSheet('Анкеты');
+    sh.appendRow(['ID','Дата','Брокер','Ключ','ФИО','ИИН','Бюро','ПКР',
+                  'Договоров','СРЗП','Платежи/мес','Данные (не редактировать)']);
+    sh.setFrozenRows(1);
+    sh.getRange('A1:L1').setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
+    sh.setColumnWidths(1, 12, [110, 130, 140, 90, 220, 120, 60, 60, 90, 110, 110, 300]);
+    sh.hideColumns(12);   // JSON — служебная колонка, глаза не мозолит
+  }
+  return sh;
+}
+
+// Сохранить разобранный отчёт. Возвращает id — по нему потом открываем.
+function apiSaveAnketa(token, a){
+  var s = _requireSession_(token);
+  a = a || {};
+  var json = JSON.stringify(a.data || {});
+  if (json.length > ANKETA_JSON_MAX) {
+    return { ok:false, message:'Отчёт слишком большой для сохранения' };
+  }
+
+  var sh = _getAnketasSheet_();
+  var id = 'A' + Date.now().toString(36).toUpperCase() +
+           Math.floor(Math.random()*1296).toString(36).toUpperCase();
+
+  sh.appendRow([
+    id,
+    Utilities.formatDate(new Date(), 'Asia/Almaty', 'dd.MM.yyyy HH:mm'),
+    s.client, s.key,
+    String(a.fio || ''), String(a.iin || ''),
+    (a.source === 'gkb') ? 'ГКБ' : 'ПКБ',
+    Number(a.pkr) || '',
+    Number(a.active) || 0,
+    Number(a.srzp) || 0,
+    Number(a.load) || 0,
+    json
+  ]);
+
+  _trimAnketas_(sh, s.key);
+  return { ok:true, id:id };
+}
+
+// Оставляем только последние ANKETA_LIMIT анкет брокера — чтобы лист не рос вечно
+function _trimAnketas_(sh, key){
+  var last = sh.getLastRow();
+  if (last < 2) return;
+  var keys = sh.getRange(2, 4, last - 1, 1).getValues();
+  var mine = [];
+  for (var i = 0; i < keys.length; i++) {
+    if (String(keys[i][0]) === String(key)) mine.push(i + 2);   // номера строк
+  }
+  var extra = mine.length - ANKETA_LIMIT;
+  for (var j = extra - 1; j >= 0; j--) sh.deleteRow(mine[j]);   // снизу вверх
+}
+
+// Список анкет брокера — без тяжёлого JSON, только для показа
+function apiListAnketas(token, query){
+  var s = _requireSession_(token);
+  var sh = _getAnketasSheet_();
+  var last = sh.getLastRow();
+  if (last < 2) return { ok:true, items:[] };
+
+  var data = sh.getRange(2, 1, last - 1, 11).getValues();
+  var q = String(query || '').trim().toLowerCase();
+  var out = [];
+  for (var i = data.length - 1; i >= 0; i--) {      // свежие сверху
+    var r = data[i];
+    if (String(r[3]) !== String(s.key)) continue;   // чужие анкеты не показываем
+    if (q) {
+      var hay = (String(r[4]) + ' ' + String(r[5])).toLowerCase();
+      if (hay.indexOf(q) === -1) continue;
+    }
+    out.push({ id:r[0], date:r[1], fio:r[4], iin:r[5], bureau:r[6],
+               pkr:r[7], active:r[8], srzp:r[9], load:r[10] });
+    if (out.length >= 200) break;
+  }
+  return { ok:true, items:out };
+}
+
+// Открыть анкету заново — отдаём сохранённый разбор целиком
+function apiGetAnketa(token, id){
+  var s = _requireSession_(token);
+  var sh = _getAnketasSheet_();
+  var last = sh.getLastRow();
+  if (last < 2) return { ok:false, message:'Анкета не найдена' };
+
+  var data = sh.getRange(2, 1, last - 1, 12).getValues();
+  for (var i = 0; i < data.length; i++) {
+    if (String(data[i][0]) !== String(id)) continue;
+    if (String(data[i][3]) !== String(s.key)) return { ok:false, message:'Нет доступа к этой анкете' };
+    try {
+      return { ok:true, data: JSON.parse(data[i][11]), date: data[i][1] };
+    } catch (e) {
+      return { ok:false, message:'Сохранённые данные повреждены' };
+    }
+  }
+  return { ok:false, message:'Анкета не найдена' };
+}
+
+function apiDeleteAnketa(token, id){
+  var s = _requireSession_(token);
+  var sh = _getAnketasSheet_();
+  var last = sh.getLastRow();
+  if (last < 2) return { ok:false, message:'Анкета не найдена' };
+
+  var data = sh.getRange(2, 1, last - 1, 4).getValues();
+  for (var i = 0; i < data.length; i++) {
+    if (String(data[i][0]) !== String(id)) continue;
+    if (String(data[i][3]) !== String(s.key)) return { ok:false, message:'Нет доступа к этой анкете' };
+    sh.deleteRow(i + 2);
+    return { ok:true };
+  }
+  return { ok:false, message:'Анкета не найдена' };
 }
 
 // ============================================================
