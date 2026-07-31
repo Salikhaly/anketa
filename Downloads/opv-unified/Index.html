@@ -226,6 +226,28 @@ body {
 .inp.gold::placeholder { color:#C49A3C; opacity:.7; }
 .inp::-webkit-outer-spin-button, .inp::-webkit-inner-spin-button { opacity:.3; }
 
+/* поле ключа: моноширинный, с кнопкой «Показать» */
+.key-wrap { position:relative; }
+.key-wrap .inp {
+  padding-right:88px; font-family:'Courier New',monospace;
+  font-size:16px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+}
+.key-wrap .inp::placeholder { font-weight:500; letter-spacing:.05em; opacity:.55; }
+.key-eye {
+  position:absolute; right:6px; top:50%; transform:translateY(-50%);
+  padding:7px 10px; border:0; border-radius:8px; cursor:pointer;
+  background:transparent; color:var(--v2);
+  font-family:inherit; font-size:12px; font-weight:700;
+  min-height:32px; transition:.15s;
+}
+.key-eye:hover { background:rgba(124,58,237,.09); }
+.key-eye:focus-visible { outline:2px solid var(--v2); outline-offset:2px; }
+.remember-row {
+  display:flex; align-items:center; gap:9px; margin:12px 0 4px;
+  font-size:13px; color:var(--mute); cursor:pointer; user-select:none;
+}
+.remember-row input { width:17px; height:17px; accent-color:var(--v2); cursor:pointer; margin:0; }
+
 /* live amount format */
 .inp-wrap { position:relative; }
 .inp-currency {
@@ -950,8 +972,17 @@ body {
     <p class="login-s">Ипотека, депозиты, бланки и расчёты — в одном месте, по одному ключу</p>
     <div class="fl">
       <label class="lb" for="keyInp">Ключ доступа</label>
-      <input class="inp" id="keyInp" type="password" placeholder="Введите ключ доступа...">
+      <div class="key-wrap">
+        <input class="inp" id="keyInp" type="password" placeholder="XXXX-XXXX"
+               autocomplete="one-time-code" autocapitalize="characters" spellcheck="false">
+        <button type="button" class="key-eye" id="keyEye" onclick="toggleKeyView()"
+                aria-label="Показать ключ">Показать</button>
+      </div>
     </div>
+    <label class="remember-row">
+      <input type="checkbox" id="rememberKey" checked>
+      <span>Запомнить меня на этом устройстве</span>
+    </label>
     <button class="btn btn-v" id="btnLogin" onclick="doLogin()">Войти</button>
     <div class="msg" id="loginMsg"></div>
     <div class="login-feats">
@@ -1467,7 +1498,7 @@ body {
 // ═══════════════════════════════════════════
 //  CONSTANTS & STATE
 // ═══════════════════════════════════════════
-var TK='opv_tk', DK='opv_dk', SK='opv_save';
+var TK='opv_tk', DK='opv_dk', SK='opv_save', KK='opv_key';
 var SESSION_MS=30*60*1000, WARN_MS=5*60*1000;
 
 var token   = localStorage.getItem(TK);
@@ -1705,37 +1736,76 @@ function autoLogout(){
 // ═══════════════════════════════════════════
 //  AUTH
 // ═══════════════════════════════════════════
-function doLogin(){
+// Показать/скрыть ключ — чтобы на телефоне было видно, что набираешь
+function toggleKeyView(){
+  var i = el('keyInp'), b = el('keyEye');
+  var show = i.type === 'password';
+  i.type = show ? 'text' : 'password';
+  b.textContent = show ? 'Скрыть' : 'Показать';
+  b.setAttribute('aria-label', show ? 'Скрыть ключ' : 'Показать ключ');
+}
+
+function doLogin(silent){
   var key=el('keyInp').value.trim();
-  if(!key){showMsg('loginMsg','Введите ключ доступа','err');return;}
+  if(!key){ if(!silent) showMsg('loginMsg','Введите ключ доступа','err'); return; }
   var btn=el('btnLogin');
   btn.disabled=true; btn.innerHTML='<span class="spin"></span>Входим...';
-  showMsg('loginMsg','Подключаемся...','warn');
+  showMsg('loginMsg', silent ? 'Входим по сохранённому ключу…' : 'Подключаемся...','warn');
   google.script.run
     .withSuccessHandler(function(r){
       btn.disabled=false;btn.textContent='Войти';
       if(r.ok){
         token=r.token;localStorage.setItem(TK,token);
+        // запоминаем ключ, чтобы после истечения сессии не вводить заново
+        try{
+          var remember = el('rememberKey') ? el('rememberKey').checked : true;
+          if(remember) localStorage.setItem(KK, key); else localStorage.removeItem(KK);
+        }catch(e){}
         setUI(true,r.clientName);setSubBadge(r.daysLeft);
         applyParserUrl(r.parserUrl);
         el('keyInp').value='';hideMsg('loginMsg');
       } else if(r.expired){
+        try{ localStorage.removeItem(KK); }catch(e){}
         showPaywall(r);
       } else {
-        showMsg('loginMsg',r.message||'Неверный ключ','err');
+        try{ localStorage.removeItem(KK); }catch(e){}   // ключ неверный — не храним
+        if(silent){
+          el('keyInp').value='';
+          showMsg('loginMsg','Сохранённый ключ больше не действует — введите ключ заново','warn');
+        } else {
+          showMsg('loginMsg',r.message||'Неверный ключ','err');
+        }
       }
     })
     .withFailureHandler(function(e){btn.disabled=false;btn.textContent='Войти';showMsg('loginMsg', navigator.onLine?('Ошибка: '+(e&&e.message||e)):'Нет связи с сервером. Проверьте интернет и повторите.','err');})
-    .apiLogin(el('keyInp').value.trim(),devId());
+    .apiLogin(key,devId());
 }
 
 function doLogout(){
   var t=token;token=null;localStorage.removeItem(TK);
+  // явный выход = забыть ключ, иначе автовход сразу вернёт обратно
+  try{ localStorage.removeItem(KK); }catch(e){}
+  AUTO_KEY='';
   clearInterval(timerItv);timerItv=null;setUI(false);
   if(t)google.script.run.apiLogout(t);
 }
 
 el('keyInp').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+// Клиент может вставить ключ как угодно — «abcd 1234», «ABCD1234», с пробелами.
+// Приводим к виду ABCD-1234 прямо во время ввода.
+el('keyInp').addEventListener('input',function(){
+  // убираем пробелы и приводим к верхнему регистру — вставка из WhatsApp часто с мусором
+  var raw = this.value.toUpperCase().replace(/\s+/g,'');
+  var clean = raw.replace(/-/g,'');
+  // наши ключи — 8 латинских символов, ставим дефис сами; чужие форматы не трогаем
+  var out = /^[A-Z0-9]{5,8}$/.test(clean) ? clean.slice(0,4)+'-'+clean.slice(4) : raw;
+  if(out !== this.value){
+    var atEnd = this.selectionStart === this.value.length;
+    this.value = out;
+    if(atEnd) this.selectionStart = this.selectionEnd = out.length;
+  }
+});
 
 // ═══════════════════════════════════════════
 //  TABS
@@ -3127,8 +3197,29 @@ function doPrintPdf(){ window.print(); }
 // ═══════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════
+// Ключ из ссылки вида …/exec?key=ABCD-1234 — приоритетнее сохранённого
+var AUTO_KEY = '<?= autoKey ?>';
+
+// Возвращает ключ для автовхода: сначала из ссылки, потом из памяти устройства
+function pickSavedKey(){
+  var k = '';
+  try{ k = (AUTO_KEY || localStorage.getItem(KK) || ''); }catch(e){ k = AUTO_KEY || ''; }
+  k = String(k).trim().toUpperCase();
+  return /^[^\s<>&"']{4,32}$/.test(k) ? k : '';
+}
+
+// Тихий вход по сохранённому ключу — клиент не вводит ничего руками
+function tryAutoLogin(){
+  var k = pickSavedKey();
+  if(!k){ setUI(false); return false; }
+  setUI(false);
+  el('keyInp').value = k;
+  doLogin(true);
+  return true;
+}
+
 (function init(){
-  if(!token){setUI(false);return;}
+  if(!token){ tryAutoLogin(); return; }
   google.script.run
     .withSuccessHandler(function(r){
       if(r&&r.ok){
@@ -3136,7 +3227,9 @@ function doPrintPdf(){ window.print(); }
       } else if(r&&r.expired){
         showPaywall(r);
       } else {
-        token=null;localStorage.removeItem(TK);setUI(false);
+        // сессия истекла — если ключ сохранён, входим сами
+        token=null;localStorage.removeItem(TK);
+        tryAutoLogin();
       }
     })
     .withFailureHandler(function(){token=null;localStorage.removeItem(TK);setUI(false);})

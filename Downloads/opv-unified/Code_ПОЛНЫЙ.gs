@@ -44,11 +44,11 @@ function _getClientsSheet_() {
   var sh = ss.getSheetByName('Клиенты');
   if (!sh) {
     sh = ss.insertSheet('Клиенты');
-    sh.appendRow(['Ключ (пароль)', 'Имя клиента', 'Активен (да/нет)', 'DeviceId', 'Дата привязки', 'Действует до', 'Email (для напоминаний)']);
+    sh.appendRow(['Ключ (пароль)', 'Имя клиента', 'Активен (да/нет)', 'DeviceId', 'Дата привязки', 'Действует до', 'Email (для напоминаний)', 'Ссылка для клиента']);
     sh.setFrozenRows(1);
-    sh.getRange('A1:G1').setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
-    sh.setColumnWidths(1, 7, [140, 180, 150, 300, 140, 130, 200]);
-    sh.appendRow(['EXAMPLE', 'Пример клиента', 'нет', '', '', '', '']);
+    sh.getRange('A1:H1').setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
+    sh.setColumnWidths(1, 8, [140, 180, 150, 300, 140, 130, 200, 420]);
+    sh.appendRow(['EXAMPLE', 'Пример клиента', 'нет', '', '', '', '', '']);
   } else {
     // миграция старого листа: дорисовать недостающие колонки
     if (sh.getLastColumn() < 6) {
@@ -60,6 +60,11 @@ function _getClientsSheet_() {
       sh.getRange(1, 7).setValue('Email (для напоминаний)')
         .setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
       sh.setColumnWidth(7, 200);
+    }
+    if (sh.getLastColumn() < 8) {
+      sh.getRange(1, 8).setValue('Ссылка для клиента')
+        .setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
+      sh.setColumnWidth(8, 420);
     }
   }
   return sh;
@@ -305,9 +310,15 @@ function _payInfo_(key, name, msg) {
   };
 }
 
-function doGet(){
-  return HtmlService.createTemplateFromFile('Index')
-    .evaluate().setTitle('Единый сервис')
+// Можно дать клиенту персональную ссылку вида …/exec?key=ABCD-1234 —
+// тогда он просто открывает её и сразу попадает в сервис, без ввода ключа.
+// Ключ всё равно проверяется по листу «Клиенты» и привязывается к устройству.
+function doGet(e){
+  var t = HtmlService.createTemplateFromFile('Index');
+  t.autoKey = (e && e.parameter && e.parameter.key) ? String(e.parameter.key).trim() : '';
+  return t.evaluate()
+    .setTitle('Единый сервис')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -902,6 +913,95 @@ function apiLicense_(key, deviceId) {
     token: lic.token, sig: lic.sig,
     kaspiPhone: KASPI_PHONE, kaspiName: KASPI_NAME, price: SUB_PRICE
   };
+}
+
+// ============================================================
+//  ЗАГОТОВКА КЛЮЧЕЙ ДОСТУПА
+// ============================================================
+
+// Создаёт пул ключей заранее — чтобы при продаже не придумывать их на ходу.
+// Ключи добавляются НЕАКТИВНЫМИ: продал — вписал имя, поставил «да» и дату.
+//
+// Запуск: выбери generateKeys в списке функций вверху редактора → «Выполнить».
+// По умолчанию создаёт 100 штук; чтобы другое количество — поменяй число ниже.
+function generateKeys(){
+  var COUNT = 100;
+
+  // Алфавит без похожих символов: нет 0/O, 1/I/L — чтобы ключ можно было
+  // без ошибок продиктовать по телефону или переписать от руки.
+  var ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+  var sh = _getClientsSheet_();
+  var data = sh.getDataRange().getValues();
+  var existing = {};
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i]) continue;
+    var k = String(data[i][COL.KEY] || '').trim();
+    if (k) existing[k] = true;
+  }
+
+  function makeKey(){
+    var s = '';
+    for (var j = 0; j < 8; j++) {
+      if (j === 4) s += '-';
+      s += ALPHABET.charAt(Math.floor(Math.random() * ALPHABET.length));
+    }
+    return s;
+  }
+
+  // Адрес веб-приложения — чтобы сразу собрать персональную ссылку.
+  // Открыв её, клиент попадает внутрь без ввода ключа.
+  var base = '';
+  try { base = ScriptApp.getService().getUrl() || ''; } catch (e) { base = ''; }
+  base = base.replace(/\/dev$/, '/exec');
+
+  var rows = [], guard = 0;
+  while (rows.length < COUNT && guard < COUNT * 50) {
+    guard++;
+    var key = makeKey();
+    if (existing[key]) continue;          // на всякий случай — без повторов
+    existing[key] = true;
+    var link = base ? (base + '?key=' + key) : '';
+    rows.push([key, '', 'нет', '', '', '', '', link]);
+  }
+
+  if (rows.length) {
+    var start = sh.getLastRow() + 1;
+    sh.getRange(start, 1, rows.length, 8).setValues(rows);
+    // подсветим заготовки, чтобы отличать их от выданных
+    sh.getRange(start, 1, rows.length, 8).setBackground('#FAFAFA');
+    sh.getRange(start, 1, rows.length, 1).setFontFamily('Courier New').setFontWeight('bold');
+  }
+
+  Logger.log('Создано ключей: %s (строки %s–%s). Все неактивны — активируйте при продаже.',
+             rows.length, sh.getLastRow() - rows.length + 1, sh.getLastRow());
+  return 'Создано ключей: ' + rows.length + '. Все со статусом «нет» — активируйте при продаже.';
+}
+
+// Проставляет персональные ссылки (колонка H) всем ключам, у которых её нет.
+// Запустить один раз после публикации веб-приложения — тогда у каждого ключа
+// появится готовая ссылка: скопировал → отправил клиенту в WhatsApp.
+function fillClientLinks(){
+  var base = '';
+  try { base = ScriptApp.getService().getUrl() || ''; } catch (e) { base = ''; }
+  base = base.replace(/\/dev$/, '/exec');
+  if (!base) return 'Не удалось определить адрес веб-приложения. Сначала опубликуйте его (Развернуть → Новое развёртывание).';
+
+  var sh = _getClientsSheet_();
+  var last = sh.getLastRow();
+  if (last < 2) return 'Ключей нет.';
+
+  var keys = sh.getRange(2, 1, last - 1, 1).getValues();
+  var links = sh.getRange(2, 8, last - 1, 1).getValues();
+  var n = 0;
+  for (var i = 0; i < keys.length; i++) {
+    var k = String(keys[i][0] || '').trim();
+    if (!k || String(links[i][0] || '').trim()) continue;
+    links[i][0] = base + '?key=' + encodeURIComponent(k);
+    n++;
+  }
+  if (n) sh.getRange(2, 8, links.length, 1).setValues(links);
+  return 'Ссылок проставлено: ' + n;
 }
 
 // ============================================================
