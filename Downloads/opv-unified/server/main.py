@@ -1301,6 +1301,146 @@ def safe_set(ws, cell_ref: str, value) -> None:
 # LEGACY WRITER (sheet "Кредиты")
 # ----------------------------
 
+def write_analysis_sheet(
+    wb,
+    pkr: Optional[int],
+    active: List[Contract],
+    recent: List[Contract],
+    old: List[Contract],
+    srzp: int = 0,
+    mrp: int = 4325,
+    pm_multiplier: int = 13,
+) -> None:
+    """
+    Лист «Анализ»: риск-профиль, структура долга и сценарии закрытия —
+    то же, что менеджер видит на экране, но остаётся в файле.
+    Лимит платежа считается по методике банка для семьи из 1 человека.
+    """
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    if "Анализ" in wb.sheetnames:
+        del wb["Анализ"]
+    ws = wb.create_sheet("Анализ")
+    ws.column_dimensions["A"].width = 42
+    ws.column_dimensions["B"].width = 26
+    ws.column_dimensions["C"].width = 22
+    ws.column_dimensions["D"].width = 22
+    ws.column_dimensions["E"].width = 22
+
+    bold = Font(bold=True)
+    head_font = Font(bold=True, color="FFFFFF", size=11)
+    head_fill = PatternFill("solid", fgColor="5B21B6")
+    r = 1
+
+    def section(title: str):
+        nonlocal r
+        ws.cell(r, 1, title).font = head_font
+        for c in range(1, 6):
+            ws.cell(r, c).fill = head_fill
+        ws.row_dimensions[r].height = 20
+        r += 1
+
+    def kv(label: str, value):
+        nonlocal r
+        ws.cell(r, 1, label)
+        cell = ws.cell(r, 2, value)
+        cell.font = bold
+        r += 1
+
+    all_c = list(active) + list(recent) + list(old)
+
+    # ── Ключевые цифры ──
+    section("КЛЮЧЕВЫЕ ПОКАЗАТЕЛИ")
+    total_out = sum(c.outstanding or 0 for c in active)
+    load = sum(c.periodic_payment or 0 for c in active)
+    kv("ПКР (кредитный рейтинг)", pkr if pkr else "нет данных")
+    kv("Действующих договоров", len(active))
+    kv("Остаток долга, ₸", total_out)
+    kv("Платежи в месяц, ₸", load)
+    if srzp:
+        kv("Средняя зарплата (ЕНПФ), ₸", srzp)
+        kv("Остаётся после платежей, ₸", srzp - load)
+        if srzp > 0:
+            kv("Нагрузка к доходу, %", round(load / srzp * 100))
+    r += 1
+
+    # ── Риск-профиль ──
+    section("РИСК-ПРОФИЛЬ")
+    now_over = [c for c in active if (c.current_overdue_days or 0) > 0]
+    worst_days, worst_bank = 0, ""
+    for c in all_c:
+        d = max(c.max_overdue_days or 0, c.current_overdue_days or 0)
+        if d > worst_days:
+            worst_days, worst_bank = d, c.creditor or ""
+    cessions = [c for c in all_c if c.cessionary]
+
+    kv("Просрочка сейчас", f"{len(now_over)} договор(ов)" if now_over else "нет")
+    for c in now_over:
+        ws.cell(r, 1, f"    • {c.creditor}")
+        ws.cell(r, 2, f"{c.current_overdue_days} дн.")
+        ws.cell(r, 3, c.current_overdue_amount or "")
+        r += 1
+    kv("Худшая просрочка за историю", f"{worst_days} дн. — {worst_bank}" if worst_days else "не было")
+    kv("Передача долга (цессия)", len(cessions) if cessions else "нет")
+    for c in cessions:
+        ws.cell(r, 1, f"    • {c.creditor}")
+        ws.cell(r, 2, f"→ {c.cessionary}")
+        r += 1
+    r += 1
+
+    # ── Структура долга ──
+    section("СТРУКТУРА ДЕЙСТВУЮЩЕГО ДОЛГА")
+    cards = [c for c in active if "карт" in (c.financing_type or "").lower()]
+    loans = [c for c in active if c not in cards]
+    total_amount = sum(c.contract_amount or 0 for c in active)
+    if cards:
+        kv(f"Кредитные карты ({len(cards)}), остаток ₸", sum(c.outstanding or 0 for c in cards))
+    if loans:
+        kv(f"Займы ({len(loans)}), остаток ₸", sum(c.outstanding or 0 for c in loans))
+    if total_amount:
+        kv("Погашено от суммы договоров, %", round((total_amount - total_out) / total_amount * 100))
+    banks = sorted({(c.creditor or "—") for c in active})
+    kv("Банков-кредиторов", len(banks))
+    r += 1
+
+    # ── Сценарии закрытия ──
+    section("ЧТО ДАСТ ДОСРОЧНОЕ ЗАКРЫТИЕ")
+    limit = None
+    if srzp:
+        pm = mrp * pm_multiplier
+        ratio = srzp / mrp
+        kd = 0.40 if ratio <= 40 else (0.50 if ratio <= 65 else (0.60 if ratio <= 90 else 0.70))
+        limit = min(round(srzp * kd - load), round(srzp - srzp * 0.10 - pm - load))
+        kv("Запас на новый платёж сейчас, ₸", limit)
+        ws.cell(r, 1, f"(КД {int(kd*100)}%, прожиточный минимум {pm:,} ₸ на 1 чел.)".replace(",", " "))
+        r += 1
+
+    for col, title in enumerate(["Договор", "Остаток, ₸", "Срок при платеже", "Освободится, ₸/мес",
+                                 "Запас станет, ₸"], start=1):
+        cell = ws.cell(r, col, title)
+        cell.font = bold
+        cell.alignment = Alignment(wrap_text=True)
+    r += 1
+
+    for c in active:
+        pay = c.periodic_payment or 0
+        if pay <= 0:
+            continue
+        out = c.outstanding or 0
+        ws.cell(r, 1, c.creditor or "—")
+        ws.cell(r, 2, out)
+        ws.cell(r, 3, f"≈ {-(-out // pay)} мес." if out else "—")
+        ws.cell(r, 4, pay)
+        if limit is not None:
+            ws.cell(r, 5, limit + pay).font = bold
+        r += 1
+
+    r += 1
+    note = ws.cell(r, 1, "Расчёт справочный: срок — остаток ÷ платёж без процентов; "
+                         "лимит — по методике банка для семьи из 1 человека. Решение принимает банк.")
+    note.font = Font(italic=True, size=9, color="666666")
+
+
 def write_output_legacy_excel(
     template_path: Path,
     output_path: Path,
@@ -1311,6 +1451,7 @@ def write_output_legacy_excel(
     revoked: Optional[List[Contract]] = None,
     blank_zero: bool = True,
     only_loans_active: bool = False,
+    srzp: int = 0,
 ) -> None:
     from openpyxl import load_workbook
 
@@ -1418,6 +1559,12 @@ def write_output_legacy_excel(
         )
     # --- end A4 print setup ---
 
+    # Лист «Анализ» — риск-профиль, структура долга и сценарии закрытия
+    try:
+        write_analysis_sheet(wb, pkr, active, recent, old, srzp=srzp)
+    except Exception as e:
+        LOGGER.warning("Лист «Анализ» не создан: %s", e)
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(str(output_path))
 
@@ -1472,17 +1619,35 @@ def fill_anketa_from_pension(output_path: Path, pension: Dict[str, Any], sort_ro
         ("G29", "G", "H", "I"),   # org 3
     ]
 
+    def _org_period_range(org_rows: List[PensionRow]) -> Optional[str]:
+        """Дата начала — дата завершения периода взносов по организации
+        (по фактическому минимуму/максимуму дат, а не по порядку строк)."""
+        from datetime import datetime as _dt
+        parsed = []
+        for rr in org_rows:
+            try:
+                parsed.append(_dt.strptime(rr.date, "%d.%m.%Y"))
+            except Exception:
+                continue
+        if not parsed:
+            return None
+        start, end = min(parsed), max(parsed)
+        return f"{start.strftime('%d.%m.%Y')} — {end.strftime('%d.%m.%Y')}"
+
     total_srzp = 0
     org_srzp_list: List[str] = []
 
     for idx, bin_key in enumerate(org_names):
         org_cell, date_col, sum_col, period_col = col_map[idx]
 
-        # Получаем читаемое название по BIN
-        org_display = get_org_display_name(bin_key, rows)
-        safe_set(ws, org_cell, org_display)
-
         org_rows = groups[bin_key]
+
+        # Получаем читаемое название по BIN + период (начало — завершение) в той же ячейке
+        org_display = get_org_display_name(bin_key, rows)
+        period_range = _org_period_range(org_rows)
+        org_label = f"{org_display} ({period_range})" if period_range else org_display
+        safe_set(ws, org_cell, org_label)
+
         if sort_rows:
             from datetime import datetime as _dt
             def dkey(rr: PensionRow) -> "_dt":
@@ -1508,15 +1673,15 @@ def fill_anketa_from_pension(output_path: Path, pension: Dict[str, Any], sort_ro
         srzp = calc_pension_avg_vals(vals)
         total_srzp += srzp
         org_srzp_list.append(f"{org_display}: {srzp:,}")
-        LOGGER.info("Пенсионка БИН=%s (%s): строк=%s СРЗП=%s",
-                    bin_key, org_display, len(vals), srzp)
+        LOGGER.info("Пенсионка БИН=%s (%s, %s): строк=%s СРЗП=%s",
+                    bin_key, org_display, period_range, len(vals), srzp)
 
     # Строка СРЗП: A43 = метка, B43 = значение
-    # Если несколько орг — показываем каждую + итог
+    # Если несколько орг — явно показываем сложение: "ОРГ1: X + ОРГ2: Y = ИТОГО"
     safe_set(ws, "A43", "СРЗП")
     if len(org_names) > 1:
-        detail = " | ".join(org_srzp_list)
-        safe_set(ws, "B43", f"{total_srzp:,}  ({detail})")
+        formula = " + ".join(org_srzp_list) + f" = {total_srzp:,}"
+        safe_set(ws, "B43", formula)
     else:
         safe_set(ws, "B43", total_srzp)
 

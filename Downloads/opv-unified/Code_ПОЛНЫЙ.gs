@@ -22,6 +22,11 @@ var COL_UNTIL           = 5;                     // колонка F «Дейс�
 // Секрет подписи лицензии десктоп-парсера (HMAC).
 // ДОЛЖЕН совпадать с LICENSE_SECRET в license_gate.py.
 var LICENSE_SECRET      = 'ЗАМЕНИ_НА_ДЛИННЫЙ_СЛУЧАЙНЫЙ_СЕКРЕТ_например_kZ9x7Qm2...';
+
+// Куда слать сводку об истекающих подписках. Пусто = на почту владельца скрипта.
+var ADMIN_EMAIL         = '';
+var NOTIFY_DAYS_BEFORE  = 3;     // за сколько дней предупреждать
+var COL_EMAIL           = 6;     // колонка G «Email клиента» (необязательная)
 // ───────────────────────────────────────────────────
 
 var MORTGAGE_PROGRAMS = {
@@ -39,15 +44,23 @@ function _getClientsSheet_() {
   var sh = ss.getSheetByName('Клиенты');
   if (!sh) {
     sh = ss.insertSheet('Клиенты');
-    sh.appendRow(['Ключ (пароль)', 'Имя клиента', 'Активен (да/нет)', 'DeviceId', 'Дата привязки', 'Действует до']);
+    sh.appendRow(['Ключ (пароль)', 'Имя клиента', 'Активен (да/нет)', 'DeviceId', 'Дата привязки', 'Действует до', 'Email (для напоминаний)']);
     sh.setFrozenRows(1);
-    sh.getRange('A1:F1').setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
-    sh.setColumnWidths(1, 6, [140, 180, 150, 300, 140, 130]);
-    sh.appendRow(['EXAMPLE', 'Пример клиента', 'нет', '', '', '']);
-  } else if (sh.getLastColumn() < 6) {
-    sh.getRange(1, 6).setValue('Действует до')
-      .setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
-    sh.setColumnWidth(6, 130);
+    sh.getRange('A1:G1').setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
+    sh.setColumnWidths(1, 7, [140, 180, 150, 300, 140, 130, 200]);
+    sh.appendRow(['EXAMPLE', 'Пример клиента', 'нет', '', '', '', '']);
+  } else {
+    // миграция старого листа: дорисовать недостающие колонки
+    if (sh.getLastColumn() < 6) {
+      sh.getRange(1, 6).setValue('Действует до')
+        .setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
+      sh.setColumnWidth(6, 130);
+    }
+    if (sh.getLastColumn() < 7) {
+      sh.getRange(1, 7).setValue('Email (для напоминаний)')
+        .setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
+      sh.setColumnWidth(7, 200);
+    }
   }
   return sh;
 }
@@ -797,6 +810,27 @@ function apiCalcBankApproval(token,payload){
   };
 }
 
+// Запись разбора отчёта в историю. ИИН пишем замаскированным —
+// в журнале не должно быть полного номера документа.
+function apiLogParse(token, info){
+  var s = _requireSession_(token);
+  info = info || {};
+  var iin = String(info.iin || '');
+  var maskedIin = iin.length === 12 ? ('********' + iin.slice(-4)) : iin;
+  var bureau = (info.source === 'gkb') ? 'ГКБ' : 'ПКБ';
+  var summary = [
+    info.fio || 'без ФИО',
+    maskedIin ? ('ИИН ' + maskedIin) : '',
+    'договоров: ' + (Number(info.active) || 0),
+    (Number(info.problems) || 0) ? ('проблемных: ' + info.problems) : '',
+    info.pkr ? ('ПКР ' + info.pkr) : ''
+  ].filter(String).join(' · ');
+
+  _log_(s.client, s.key, 'PARSE', bureau, summary,
+        Number(info.srzp) || 0, Number(info.load) || 0);
+  return { ok: true };
+}
+
 function apiGetPdfData(token,payload){
   var s=_requireSession_(token);
   return {
@@ -868,6 +902,102 @@ function apiLicense_(key, deviceId) {
     token: lic.token, sig: lic.sig,
     kaspiPhone: KASPI_PHONE, kaspiName: KASPI_NAME, price: SUB_PRICE
   };
+}
+
+// ============================================================
+//  НАПОМИНАНИЯ О ПРОДЛЕНИИ ПОДПИСКИ
+//  Запускать раз в сутки по триггеру: setupNotifyTrigger() один раз.
+// ============================================================
+
+// Проверяет всех клиентов и шлёт: клиенту — письмо (если указан email
+// в колонке G), администратору — сводку со списком, кому пора продлевать.
+function notifyExpiring(){
+  var sh = _getClientsSheet_();
+  var data = sh.getDataRange().getValues();
+  var soon = [], expired = [], sentToClients = 0;
+
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    if (!row) continue;
+    var key    = String(row[COL.KEY]    || '').trim();
+    var name   = String(row[COL.NAME]   || '').trim();
+    var active = String(row[COL.ACTIVE] || '').trim().toLowerCase() === 'да';
+    var email  = String(row[COL_EMAIL]  || '').trim();
+    if (!key || !name || !active) continue;
+
+    var days = _subDaysLeft_(row[COL_UNTIL]);
+    if (days === null) continue;                 // бессрочная — пропускаем
+
+    if (days < 0) {
+      expired.push({ name: name, key: key, days: days, until: _fmtDate_(row[COL_UNTIL]) });
+    } else if (days <= NOTIFY_DAYS_BEFORE) {
+      soon.push({ name: name, key: key, days: days, until: _fmtDate_(row[COL_UNTIL]) });
+      if (email && email.indexOf('@') > 0) {
+        try {
+          MailApp.sendEmail({
+            to: email,
+            subject: 'Подписка на сервис заканчивается через ' + days + ' дн.',
+            htmlBody:
+              '<p>Здравствуйте, ' + name + '!</p>' +
+              '<p>Ваша подписка действует до <b>' + _fmtDate_(row[COL_UNTIL]) + '</b> — ' +
+              'осталось <b>' + days + ' дн.</b></p>' +
+              '<p>Чтобы доступ не прервался, продлите её:<br>' +
+              'переведите <b>' + SUB_PRICE + ' ₸</b> на Kaspi <b>' + KASPI_PHONE + '</b> ' +
+              '(получатель: ' + KASPI_NAME + ') и пришлите чек.</p>' +
+              '<p style="color:#666;font-size:12px">Ваш ключ доступа: ' + key + '</p>'
+          });
+          sentToClients++;
+        } catch (e) {
+          Logger.log('Не удалось отправить письмо %s: %s', email, e);
+        }
+      }
+    }
+  }
+
+  // Сводка администратору
+  if (soon.length || expired.length) {
+    var body = '';
+    if (soon.length) {
+      body += '<h3>Заканчивается (' + soon.length + ')</h3><ul>';
+      soon.forEach(function(c){
+        body += '<li><b>' + c.name + '</b> — осталось ' + c.days + ' дн. (до ' + c.until + '), ключ: ' + c.key + '</li>';
+      });
+      body += '</ul>';
+    }
+    if (expired.length) {
+      body += '<h3>Уже истекли (' + expired.length + ')</h3><ul>';
+      expired.forEach(function(c){
+        body += '<li><b>' + c.name + '</b> — истекла ' + c.until + ' (' + Math.abs(c.days) + ' дн. назад), ключ: ' + c.key + '</li>';
+      });
+      body += '</ul>';
+    }
+    body += '<p style="color:#666;font-size:12px">Писем клиентам отправлено: ' + sentToClients +
+            '. Чтобы клиент получал напоминание сам — впишите его email в колонку G листа «Клиенты».</p>';
+    try {
+      MailApp.sendEmail({
+        to: ADMIN_EMAIL || Session.getEffectiveUser().getEmail(),
+        subject: 'Подписки: ' + soon.length + ' заканчивается, ' + expired.length + ' истекло',
+        htmlBody: body
+      });
+    } catch (e) {
+      Logger.log('Сводка администратору не ушла: %s', e);
+    }
+  }
+
+  Logger.log('Проверено. Заканчивается: %s, истекло: %s, писем клиентам: %s',
+             soon.length, expired.length, sentToClients);
+  return 'Заканчивается: ' + soon.length + ', истекло: ' + expired.length + ', писем: ' + sentToClients;
+}
+
+// РАЗОВАЯ функция: включает ежедневную проверку подписок в 10:00.
+// Запусти один раз из редактора — дальше работает само.
+function setupNotifyTrigger(){
+  ScriptApp.getProjectTriggers().forEach(function(t){
+    if (t.getHandlerFunction() === 'notifyExpiring') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('notifyExpiring').timeBased().everyDays(1).atHour(10).create();
+  Logger.log('Готово: проверка подписок будет запускаться ежедневно около 10:00.');
+  return 'Ежедневная проверка подписок включена';
 }
 
 // РАЗОВАЯ функция: записывает в лист «Программы» актуальные ставки

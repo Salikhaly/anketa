@@ -468,6 +468,7 @@ body {
 .hb-eq  { background:var(--gold4); color:var(--gold); }
 .hb-buh { background:var(--red2); color:var(--red3); }
 .hb-sc  { background:var(--grn2); color:var(--grn); }
+.hb-parse { background:var(--v3); color:var(--v); }
 
 /* ══════════════════════════════════════
    PDF MODAL
@@ -795,6 +796,54 @@ body {
 .pr-risk-card small { font-size:11px; color:var(--muted); line-height:1.45; display:block; }
 .pr-scn-sub { font-size:10.5px; color:var(--muted); margin-top:2px; }
 .pr-scn-gain { color:var(--grn); }
+.pr-actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+.pr-actions .btn { flex:1; min-width:200px; margin-top:0; }
+.pr-actions .pr-act-2 { padding:13px; font-size:14px; }
+
+/* ══════════════════════════════════════
+   ПЕЧАТНЫЙ ОТЧЁТ ДЛЯ КЛИЕНТА
+   На экране скрыт; при печати скрывается всё остальное.
+══════════════════════════════════════ */
+.client-report { display:none; }
+
+@media print {
+  @page { size:A4; margin:14mm 12mm; }
+  body { background:#fff !important; }
+  /* прячем интерфейс */
+  .hdr, .nav-w, .main, .net-banner, .sess-modal, .tour, .overlay { display:none !important; }
+  .client-report {
+    display:block !important;
+    font-family:'DM Sans', Arial, sans-serif;
+    color:#111; font-size:11pt; line-height:1.5;
+  }
+  .cr-head { display:flex; justify-content:space-between; align-items:flex-start;
+             border-bottom:2px solid #5B21B6; padding-bottom:10px; margin-bottom:14px; }
+  .cr-brand { font-family:'DM Serif Display',Georgia,serif; font-size:19pt; color:#5B21B6; }
+  .cr-sub { font-size:9pt; color:#555; margin-top:2px; }
+  .cr-meta { font-size:9pt; color:#555; text-align:right; white-space:nowrap; }
+  .cr-client { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+               background:#F5F3FF; border-radius:6px; padding:9px 12px; margin-bottom:14px; }
+  .cr-client span { font-size:9pt; color:#555; }
+  .cr-client b { font-size:13pt; }
+  .cr-pkr { margin-left:auto; }
+  .cr-verdict { border-left:3px solid #5B21B6; padding:2px 0 2px 12px; margin-bottom:14px; }
+  .cr-v-title { font-weight:700; font-size:12.5pt; margin-bottom:3px; }
+  .cr-v-text { font-size:10pt; color:#333; }
+  .cr-highlight { border:1.5px solid #5B21B6; border-radius:8px; padding:12px 14px;
+                  text-align:center; margin-bottom:16px; }
+  .cr-hl-lbl { font-size:9pt; color:#555; text-transform:uppercase; letter-spacing:.5px; }
+  .cr-hl-val { font-family:'DM Serif Display',Georgia,serif; font-size:22pt; color:#5B21B6; margin:2px 0 4px; }
+  .cr-hl-note { font-size:8.5pt; color:#666; line-height:1.4; }
+  .cr-sec { font-weight:700; font-size:11pt; margin:16px 0 7px;
+            border-bottom:1px solid #ddd; padding-bottom:4px; }
+  .cr-table { width:100%; border-collapse:collapse; font-size:10pt; }
+  .cr-table td { padding:6px 0; border-bottom:1px solid #eee; }
+  .cr-table td:last-child { text-align:right; white-space:nowrap; }
+  .cr-recs { margin:0; padding-left:20px; font-size:10pt; }
+  .cr-recs li { margin-bottom:7px; line-height:1.5; }
+  .cr-foot { margin-top:20px; padding-top:8px; border-top:1px solid #ddd;
+             font-size:8.5pt; color:#666; line-height:1.4; }
+}
 
 /* ── Ипотечный калькулятор ── */
 .mort-inputs { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
@@ -1240,10 +1289,10 @@ body {
       </p>
       <div class="up-grid">
         <label class="up-zone" id="upCredit">
-          <input type="file" accept="application/pdf" id="fileCredit" onchange="onFilePick(this,'credit')" hidden>
+          <input type="file" accept="application/pdf" id="fileCredit" multiple onchange="onFilePick(this,'credit')" hidden>
           <span class="up-ic"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6M9 16h4"/></svg></span>
           <span class="up-t">Кредитный отчёт PDF</span>
-          <span class="up-s" id="upCreditName">Нажмите или перетащите файл · обязательно</span>
+          <span class="up-s" id="upCreditName">Нажмите или перетащите файл · можно сразу несколько</span>
         </label>
         <label class="up-zone opt" id="upPension">
           <input type="file" accept="application/pdf" id="filePension" onchange="onFilePick(this,'pension')" hidden>
@@ -1361,6 +1410,9 @@ body {
     </div>
   </div>
 </div>
+
+<!-- ═════ ПЕЧАТНЫЙ ОТЧЁТ ДЛЯ КЛИЕНТА (виден только при печати) ═════ -->
+<div id="clientReport" class="client-report"></div>
 
 <!-- ═════ БАННЕР «НЕТ ИНТЕРНЕТА» ═════ -->
 <div id="netBanner" class="net-banner" role="alert" style="display:none">
@@ -1965,18 +2017,119 @@ var PARSER_API = 'https://opv-three.vercel.app';
 var _parseFiles = {credit:null, pension:null};
 var _parseExcel = null, _parseName = 'anketa.xlsx';
 
+var _batchFiles = [];   // несколько отчётов за раз
+
 function onFilePick(input, kind){
-  var f = input.files && input.files[0];
-  _parseFiles[kind] = f || null;
+  var files = input.files ? Array.prototype.slice.call(input.files) : [];
+  var f = files[0] || null;
+  _parseFiles[kind] = f;
   var lbl = kind==='credit' ? 'upCreditName' : 'upPensionName';
   var zone = kind==='credit' ? el('upCredit') : el('upPension');
-  if(f){ el(lbl).textContent = f.name; zone.classList.add('has'); }
-  else { zone.classList.remove('has'); }
+
+  if(kind === 'credit'){
+    _batchFiles = files.length > 1 ? files : [];
+    if(files.length > 1){
+      el(lbl).textContent = 'Выбрано файлов: ' + files.length + ' — обработаем по очереди';
+      el('btnParse').textContent = 'Распознать ' + files.length + ' отчёта(ов)';
+    } else if(f){
+      el(lbl).textContent = f.name;
+      el('btnParse').textContent = 'Распознать отчёт';
+    }
+  } else if(f){
+    el(lbl).textContent = f.name;
+  }
+
+  if(f){ zone.classList.add('has'); } else { zone.classList.remove('has'); }
+}
+
+// Пакет: гоняем файлы по очереди и собираем сводку.
+// Последовательно, а не параллельно — чтобы не упереться в лимиты сервера
+// и показывать честный прогресс.
+function doParseBatch(){
+  var btn = el('btnParse');
+  btn.disabled = true;
+  el('parseResult').style.display = 'none';
+  var results = [], i = 0;
+
+  function step(){
+    if(i >= _batchFiles.length){
+      btn.disabled = false;
+      btn.textContent = 'Распознать ' + _batchFiles.length + ' отчёта(ов)';
+      hideMsg('parseMsg');
+      renderBatch(results);
+      return;
+    }
+    var file = _batchFiles[i];
+    btn.innerHTML = '<span class="spin"></span>Обрабатываем ' + (i+1) + ' из ' + _batchFiles.length + '…';
+    showMsg('parseMsg', 'Файл ' + (i+1) + ' из ' + _batchFiles.length + ': ' + file.name, 'warn');
+
+    var done = function(d){
+      results.push({ file: file.name, data: (d && d.ok) ? d : null,
+                     error: (d && !d.ok) ? (d.error || d.detail || 'не распознан') : null });
+      if(d && d.ok) logParseToHistory(d);
+      i++; step();
+    };
+    var fail = function(e){
+      results.push({ file: file.name, data: null,
+                     error: navigator.onLine ? ('ошибка: ' + (e && e.message || e)) : 'нет связи' });
+      i++; step();
+    };
+
+    if(window.__parseMock){ window.__parseMock({credit:file}).then(done, fail); return; }
+    var fd = new FormData();
+    fd.append('token', token||''); fd.append('file', file);
+    fetch(PARSER_API.replace(/\/$/,'')+'/parse', {method:'POST', body:fd})
+      .then(function(r){ return r.json().catch(function(){ return {ok:false, error:'некорректный ответ'}; }); })
+      .then(done).catch(fail);
+  }
+  step();
+}
+
+// Сводка по пакету: строка на каждый файл + скачивание Excel по каждому
+var _batchExcel = {};
+function renderBatch(results){
+  _batchExcel = {};
+  var okCount = results.filter(function(r){ return r.data; }).length;
+  var rows = results.map(function(r, idx){
+    if(!r.data){
+      return '<tr><td>'+r.file+'</td><td colspan="5" class="pr-bad">'+r.error+'</td></tr>';
+    }
+    var d = r.data;
+    _batchExcel[idx] = { b64: d.excel_b64, name: 'anketa_'+(d.iin ? d.iin.slice(-4) : idx)+'.xlsx' };
+    var problems = (d.active||[]).filter(function(c){ return (c.current_overdue_days||0)>0; }).length
+                 + (d.completed_recent||[]).length + (d.completed_old||[]).length;
+    return '<tr>'
+      + '<td>'+(d.fio || r.file)+'<div class="pr-scn-sub">'+((d.source==='gkb')?'ГКБ':'ПКБ')+'</div></td>'
+      + '<td>'+(d.pkr || '—')+'</td>'
+      + '<td>'+((d.active||[]).length)+'</td>'
+      + '<td'+(problems?' class="pr-bad"':'')+'>'+problems+'</td>'
+      + '<td>'+fmtN(d.monthly_load)+' ₸</td>'
+      + '<td><button class="kbtn" onclick="downloadBatchExcel('+idx+')">Excel</button></td>'
+      + '</tr>';
+  }).join('');
+
+  el('parseResult').innerHTML =
+      '<div class="pr-verdict ok"><div class="pr-verdict-ico">✓</div><div>'
+    + '<div class="pr-verdict-title">Обработано '+okCount+' из '+results.length+'</div>'
+    + '<div class="pr-verdict-sub">Скачайте анкеты по каждому клиенту. Для подробного анализа загрузите отчёт по одному.</div>'
+    + '</div></div>'
+    + '<div class="pr-table-wrap"><table class="pr-table"><thead><tr>'
+    + '<th>Клиент</th><th>ПКР</th><th>Договоров</th><th>Проблемных</th><th>Нагрузка/мес</th><th></th>'
+    + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  el('parseResult').style.display = 'block';
+}
+
+function downloadBatchExcel(idx){
+  var item = _batchExcel[idx];
+  if(!item || !item.b64) return;
+  _parseExcel = item.b64; _parseName = item.name;
+  downloadExcel();
 }
 
 function doParse(){
   if(!_parseFiles.credit){ showMsg('parseMsg','Выберите PDF кредитного отчёта','err'); return; }
   if(el('consentChk') && !el('consentChk').checked){ showMsg('parseMsg','Отметьте согласие клиента на обработку персональных данных','err'); return; }
+  if(_batchFiles.length > 1){ doParseBatch(); return; }   // выбрано несколько файлов
   var btn=el('btnParse'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>Распознаём…';
   showMsg('parseMsg','Загружаем и распознаём файл…','warn');
   el('parseResult').style.display='none';
@@ -2085,8 +2238,154 @@ function renderParse(d){
   h += renderCompletedTable(compRecent, 'Завершённые — до 5 лет назад');
   h += renderCompletedTable(compOld, 'Завершённые — более 5 лет назад');
 
-  h += '<button class="btn btn-v" style="margin-top:16px" onclick="downloadExcel()">⬇ Скачать Excel-анкету</button>';
+  h += '<div class="pr-actions">'
+    + '<button class="btn btn-v" onclick="downloadExcel()">⬇ Скачать Excel-анкету</button>'
+    + '<button class="btn btn-ghost pr-act-2" onclick="printClientReport()">📄 Отчёт для клиента</button>'
+    + '</div>';
   el('parseResult').innerHTML=h; el('parseResult').style.display='block';
+  _lastParse = d;   // для печатного отчёта
+  logParseToHistory(d);
+}
+
+// Пишем разбор в историю — чтобы потом было видно, чьи отчёты проверяли.
+// Демо-режим не логируем: там разбор не настоящий.
+function logParseToHistory(d){
+  if(!token || !d || d._demo) return;
+  var problems = (d.active||[]).filter(function(c){ return (c.current_overdue_days||0) > 0; }).length
+               + (d.completed_recent||[]).length + (d.completed_old||[]).length;
+  google.script.run
+    .withSuccessHandler(function(){})
+    .withFailureHandler(function(){})   // история не критична — молча пропускаем
+    .apiLogParse(token, {
+      source: d.source, fio: d.fio, iin: d.iin, pkr: d.pkr,
+      active: (d.active||[]).length, problems: problems,
+      srzp: d.srzp || 0, load: d.monthly_load || 0
+    });
+}
+
+// ═══════════════════════════════════════════
+//  ПЕЧАТНЫЙ ОТЧЁТ ДЛЯ КЛИЕНТА
+//  То, что менеджер отдаёт клиенту на руки: выводы, риски и что сделать,
+//  чтобы одобрили больше. Печатается через «Сохранить как PDF» в браузере.
+// ═══════════════════════════════════════════
+var _lastParse = null;
+
+function printClientReport(){
+  var d = _lastParse;
+  if(!d){ return; }
+
+  var active = d.active || [], compRecent = d.completed_recent || [], compOld = d.completed_old || [];
+  var all = active.concat(compRecent, compOld);
+  var income = Number(d.srzp)||0, load = Number(d.monthly_load)||0;
+
+  // ── Ключевые цифры ──
+  var totalOut = active.reduce(function(s,c){ return s + (Number(c.outstanding)||0); }, 0);
+  var nowOverdue = active.filter(function(c){ return (Number(c.current_overdue_days)||0) > 0; });
+  var worstDays = 0, worstBank = '';
+  all.forEach(function(c){
+    var dd = Math.max(Number(c.max_overdue_days)||0, Number(c.current_overdue_days)||0);
+    if(dd > worstDays){ worstDays = dd; worstBank = c.creditor||''; }
+  });
+  var cessions = all.filter(function(c){ return c.cessionary; }).length;
+
+  // ── Запас на новый платёж ──
+  var limit = null, pm = null, kd = null;
+  if(income && MORT){
+    pm = MORT.mrp * MORT.pmOther; kd = mortKd(income);   // базовый ПМ, 1 чел. — как в Excel
+    var res = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
+    limit = Math.min(Math.round(income*kd - load), Math.round(income - income*res - pm - load));
+  }
+
+  var today = new Date().toLocaleDateString('ru-RU');
+  var who = S.clientName ? ('Подготовил: ' + S.clientName) : '';
+
+  // ── Вердикт простыми словами ──
+  var vTitle, vText;
+  if(nowOverdue.length){
+    vTitle = 'Есть текущая просрочка — сначала нужно её закрыть';
+    vText = 'По ' + nowOverdue.length + ' действующему договору есть просрочка на дату отчёта. '
+          + 'Пока она не погашена, банк, скорее всего, откажет — это первое, что нужно исправить.';
+  } else if(worstDays >= 90){
+    vTitle = 'Просрочек сейчас нет, но в прошлом была серьёзная';
+    vText = 'Максимальная просрочка за историю — ' + worstDays + ' дней'
+          + (worstBank ? (' (' + worstBank + ')') : '') + '. Банк это увидит и будет учитывать, '
+          + 'но текущая дисциплина чистая — это в вашу пользу.';
+  } else if(worstDays > 0 || cessions){
+    vTitle = 'Кредитная история рабочая, критичных проблем нет';
+    vText = 'Просрочек по действующим договорам нет. В прошлом были незначительные задержки — '
+          + 'обычно это не мешает одобрению.';
+  } else {
+    vTitle = 'Чистая кредитная история';
+    vText = 'Ни просрочек, ни передачи долга коллекторам в отчёте нет. Это сильная позиция для банка.';
+  }
+
+  // ── Рекомендации: что сделать, чтобы одобрили больше ──
+  var recs = [];
+  if(nowOverdue.length){
+    recs.push('<b>Погасить текущую просрочку</b> — ' + nowOverdue.map(function(c){
+      return (c.creditor||'') + ' (' + c.current_overdue_days + ' дн.'
+           + (c.current_overdue_amount ? ', ' + fmtN(c.current_overdue_amount) + ' ₸' : '') + ')';
+    }).join(', ') + '. Без этого заявку рассматривать не будут.');
+  }
+  var payers = active.filter(function(c){ return (Number(c.periodic_payment)||0) > 0; })
+                     .sort(function(a,b){ return (b.periodic_payment||0) - (a.periodic_payment||0); });
+  if(payers.length && limit !== null){
+    var top = payers[0];
+    recs.push('<b>Закрыть договор ' + (top.creditor||'') + '</b> — освободится '
+      + fmtN(top.periodic_payment) + ' ₸ в месяц, и допустимый платёж по новому кредиту вырастет с '
+      + fmtN(limit) + ' до <b>' + fmtN(limit + Number(top.periodic_payment||0)) + ' ₸</b>.');
+  }
+  if(income && limit !== null && limit > 0){
+    recs.push('<b>Не брать новых кредитов до подачи заявки</b> — сейчас запас на платёж '
+      + fmtN(limit) + ' ₸/мес, каждый новый кредит его уменьшает.');
+  }
+  if(!income){
+    recs.push('<b>Подготовить пенсионную выписку ЕНПФ</b> — по ней банк считает официальный доход. '
+      + 'Без неё точную сумму одобрения не рассчитать.');
+  }
+  if(!recs.length) recs.push('Кредитная история в порядке — можно подавать заявку.');
+
+  // ── Собираем документ ──
+  var rows = ''
+    + '<tr><td>Действующих договоров</td><td><b>' + active.length + '</b></td></tr>'
+    + '<tr><td>Остаток долга</td><td><b>' + fmtN(totalOut) + ' ₸</b></td></tr>'
+    + '<tr><td>Платежи в месяц</td><td><b>' + fmtN(load) + ' ₸</b></td></tr>'
+    + (income ? '<tr><td>Средняя зарплата (ЕНПФ)</td><td><b>' + fmtN(income) + ' ₸</b></td></tr>' : '')
+    + (income ? '<tr><td>Остаётся после платежей</td><td><b>' + fmtN(income - load) + ' ₸</b></td></tr>' : '')
+    + '<tr><td>Просрочка сейчас</td><td><b>' + (nowOverdue.length ? (nowOverdue.length + ' договор(ов)') : 'нет') + '</b></td></tr>'
+    + '<tr><td>Худшая просрочка за историю</td><td><b>' + (worstDays ? (worstDays + ' дн.') : 'не было') + '</b></td></tr>'
+    + (cessions ? '<tr><td>Передача долга коллекторам</td><td><b>' + cessions + '</b></td></tr>' : '');
+
+  var limitBlock = (limit !== null)
+    ? '<div class="cr-highlight"><div class="cr-hl-lbl">Доступный платёж по новому кредиту</div>'
+      + '<div class="cr-hl-val">' + (limit > 0 ? (fmtN(limit) + ' ₸ / мес') : 'нет запаса') + '</div>'
+      + '<div class="cr-hl-note">Рассчитано по методике банка: коэффициент долговой нагрузки '
+      + Math.round(kd*100) + '% и прожиточный минимум на одного человека. '
+      + 'Точная сумма зависит от состава семьи и программы.</div></div>'
+    : '';
+
+  var listItems = recs.map(function(r,i){ return '<li>' + r + '</li>'; }).join('');
+
+  var html = ''
+    + '<div class="cr-head">'
+    +   '<div><div class="cr-brand">Анализ кредитной истории</div>'
+    +   '<div class="cr-sub">Отчёт подготовлен по данным кредитного бюро '
+    +   ((d.source === 'gkb') ? 'ГКБ (mkb.kz)' : 'ПКБ (1cb.kz)') + '</div></div>'
+    +   '<div class="cr-meta">' + today + (who ? ('<br>' + who) : '') + '</div>'
+    + '</div>'
+    + '<div class="cr-client"><span>Клиент</span><b>' + (d.fio || '—') + '</b>'
+    +   (d.pkr ? ('<span class="cr-pkr">Кредитный рейтинг ПКР: <b>' + d.pkr + '</b></span>') : '') + '</div>'
+    + '<div class="cr-verdict"><div class="cr-v-title">' + vTitle + '</div><div class="cr-v-text">' + vText + '</div></div>'
+    + limitBlock
+    + '<div class="cr-sec">Что показывает отчёт</div>'
+    + '<table class="cr-table">' + rows + '</table>'
+    + '<div class="cr-sec">Что сделать, чтобы одобрили больше</div>'
+    + '<ol class="cr-recs">' + listItems + '</ol>'
+    + '<div class="cr-foot">Расчёт носит справочный характер. Окончательное решение по кредиту принимает банк '
+    + 'на основании полного пакета документов.</div>';
+
+  el('clientReport').innerHTML = html;
+  window.print();
 }
 
 // ── Вспомогательное: дата «дд.мм.гггг» → Date, и «сколько лет назад» ──
@@ -2219,7 +2518,7 @@ function renderPayoffScenarios(d, active){
   var income = Number(d.srzp)||0, load = Number(d.monthly_load)||0;
   var baseLimit = null;
   if(income && MORT){
-    var pm = mortPm('nauryz20', 1), kd = mortKd(income);
+    var pm = MORT.mrp * MORT.pmOther, kd = mortKd(income);   // базовый ПМ, 1 чел. — как в Excel
     var res = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
     baseLimit = Math.min(Math.round(income*kd - load), Math.round(income - income*res - pm - load));
   }
@@ -2274,7 +2573,7 @@ function renderIncomeAnalysis(d){
   // Лимит банка считаем, только если конфиг (МРП, КД, ПМ) уже пришёл с сервера
   var verdict = '', note = '';
   if(MORT){
-    var pm  = mortPm('nauryz20', 1);              // семья 1 чел. — базовый расчёт
+    var pm  = MORT.mrp * MORT.pmOther;            // базовый ПМ, 1 чел. — как в Excel
     var kd  = mortKd(income);
     var res = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
     var m1  = Math.round(income * kd - load);
@@ -2690,8 +2989,8 @@ function loadHistory(){
         el('histContent').innerHTML='<div class="empty"><div class="eico">📭</div><p>История пуста</p></div>';
         return;
       }
-      var modeLabels={VAR:'Разные ОПВ',EQ:'Одинаковые ОПВ',BUH:'Бухгалтерия',SCENARIO:'Сценарий',LOGIN:'Вход'};
-      var badgeCls={VAR:'hb-var',EQ:'hb-eq',BUH:'hb-buh',SCENARIO:'hb-sc'};
+      var modeLabels={VAR:'Разные ОПВ',EQ:'Одинаковые ОПВ',BUH:'Бухгалтерия',SCENARIO:'Сценарий',LOGIN:'Вход',PARSE:'Разбор отчёта',BANK:'Одобрение'};
+      var badgeCls={VAR:'hb-var',EQ:'hb-eq',BUH:'hb-buh',SCENARIO:'hb-sc',PARSE:'hb-parse',BANK:'hb-sc'};
       var html='<div class="hist-list">';
       r.rows.forEach(function(row){
         var bc=badgeCls[row.mode]||'hb-var';

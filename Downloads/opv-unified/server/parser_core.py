@@ -90,6 +90,7 @@ def parse_report(credit_pdf: bytes,
             template_path=TEMPLATE, output_path=Path(tmp_out),
             pkr=cd.get("pkr"), active=active, recent=recent, old=old,
             revoked=revoked, blank_zero=True, only_loans_active=False,
+            srzp=srzp,
         )
         if pension:
             parser.fill_anketa_from_pension(Path(tmp_out), pension, sort_rows=False)

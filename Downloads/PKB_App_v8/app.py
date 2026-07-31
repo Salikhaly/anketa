@@ -36,7 +36,57 @@ DEFAULT_SETTINGS = {
     "license_url": "", "access_key": "", "device_id": "",
     "license_ok_once": False, "license_until": None, "license_name": "",
     "license_token": "", "license_sig": "",
+    # Автобэкап базы анкет: делается раз в сутки при запуске программы.
+    "backup_last": "", "backup_keep": 30,
 }
+
+
+# ── Автобэкап базы клиентов ──────────────────────────────────────────────────
+# База анкет и настройки — главный актив, восстановить их неоткуда.
+# Раз в сутки при запуске складываем копию рядом (и в папку бэкапов,
+# если она задана в настройках), храним последние backup_keep копий.
+def auto_backup(settings):
+    try:
+        today = datetime.now().strftime('%Y-%m-%d')
+        if settings.get('backup_last') == today:
+            return                                  # сегодня уже делали
+        if not DB_FILE.exists():
+            return                                  # ещё нет базы — нечего копировать
+
+        targets = [Path(__file__).parent / 'backups']
+        ext = (settings.get('backup_folder') or '').strip()
+        if ext:
+            targets.append(Path(ext) / 'база_бэкапы')
+
+        stamp = datetime.now().strftime('%Y-%m-%d_%H%M%S')
+        keep = int(settings.get('backup_keep') or 30)
+
+        for folder in targets:
+            try:
+                folder.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(str(DB_FILE), str(folder / f'база_анкет_{stamp}.xlsx'))
+                if SETTINGS_FILE.exists():
+                    shutil.copy2(str(SETTINGS_FILE), str(folder / f'settings_{stamp}.json'))
+                # ротация: оставляем только последние keep копий базы
+                copies = sorted(folder.glob('база_анкет_*.xlsx'),
+                                key=lambda p: p.stat().st_mtime, reverse=True)
+                for old in copies[keep:]:
+                    try:
+                        old.unlink()
+                        stem = old.stem.replace('база_анкет_', 'settings_')
+                        old_cfg = old.with_name(stem + '.json')
+                        if old_cfg.exists():
+                            old_cfg.unlink()
+                    except OSError:
+                        pass
+                LOGGER.info('Бэкап базы: %s', folder)
+            except Exception as e:
+                LOGGER.warning('Бэкап в %s не удался: %s', folder, e)
+
+        settings['backup_last'] = today
+        save_settings(settings)
+    except Exception as e:
+        LOGGER.warning('Автобэкап пропущен: %s', e)
 
 # ── Дизайн-система ────────────────────────────────────────────────────────────
 T = {
@@ -1215,7 +1265,7 @@ class App:
                 recent=cd.get('completed_recent') or [],
                 old=cd.get('completed_old') or [],
                 revoked=cd.get('revoked') or [],
-                blank_zero=True, only_loans_active=False)
+                blank_zero=True, only_loans_active=False, srzp=srzp)
 
             self._write_extra(out_path, phone, goal, onhand, cash, bv, gp)
 
@@ -1357,6 +1407,7 @@ def main():
         if not require_license(root, settings, save_settings, logger=LOGGER):
             root.destroy()
             return
+        auto_backup(settings)     # копия базы раз в сутки
     except Exception as e:
         LOGGER.warning("Лицензия: пропущена из-за ошибки (%s)", e)
 
