@@ -814,6 +814,54 @@ body {
 .pr-inc-verdict.bad b { color:#991B1B; }
 .pr-inc-note { font-size:11px; color:var(--muted); line-height:1.55; margin-top:10px; }
 
+/* Настройки расчёта: состав семьи и коэффициент ПМ */
+.prs-cfg {
+  display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;
+  padding:12px 14px; margin:0 0 12px;
+  background:var(--v-soft,#F5F3FF); border:1px solid var(--bdr); border-radius:10px;
+}
+.prs-cfg-f { display:flex; flex-direction:column; gap:6px; }
+.prs-cfg-l { font-size:11px; font-weight:700; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; }
+.prs-cfg-i {
+  width:76px; padding:8px 10px; border:1.5px solid var(--bdr); border-radius:8px;
+  font-family:inherit; font-size:15px; font-weight:700; color:var(--ink);
+  background:var(--surf); outline:none; text-align:center;
+}
+.prs-cfg-i:focus { border-color:var(--v2); box-shadow:0 0 0 3px rgba(124,58,237,.12); }
+.prs-segs { display:flex; gap:0; border:1.5px solid var(--bdr); border-radius:8px; overflow:hidden; background:var(--surf); }
+.prs-seg {
+  padding:8px 12px; border:0; background:transparent; cursor:pointer;
+  font-family:inherit; font-size:12px; font-weight:600; color:var(--ink2);
+  min-height:36px; white-space:nowrap; transition:.15s;
+}
+.prs-seg + .prs-seg { border-left:1.5px solid var(--bdr); }
+.prs-seg:hover { background:rgba(124,58,237,.07); }
+.prs-seg.on { background:var(--v); color:#fff; }
+.prs-seg:focus-visible { outline:2px solid var(--v2); outline-offset:-2px; }
+
+/* Варианты расчёта: обычные программы и Наурыз */
+.prs-vars { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-top:12px; }
+.prs-var { border:1px solid #BBF7D0; background:var(--ok_bg,#F0FDF4); border-radius:10px; padding:11px 14px; }
+.prs-var.bad { border-color:#FECACA; background:var(--err_bg,#FEF2F2); }
+.prs-var-h { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.prs-var-h b { font-size:12.5px; font-weight:700; color:#166534; }
+.prs-var.bad .prs-var-h b { color:#991B1B; }
+.prs-var-h span { font-size:11px; color:var(--muted); white-space:nowrap; }
+.prs-var-v { font-size:19px; font-weight:800; color:#166534; margin:4px 0 3px; font-variant-numeric:tabular-nums; }
+.prs-var.bad .prs-var-v { color:#991B1B; }
+.prs-var-d { font-size:10.5px; color:var(--muted); line-height:1.5; }
+@media (max-width:560px){
+  .prs-cfg { gap:12px; padding:11px 12px; }
+  .prs-seg { padding:8px 9px; font-size:11.5px; }
+}
+
+/* Печатный отчёт: две колонки в блоке доступного платежа */
+.cr-hl-two { display:flex; gap:44px; justify-content:center; flex-wrap:wrap; margin:8px 0 12px; }
+.cr-hl-two > div { display:flex; flex-direction:column; align-items:center; gap:3px; }
+.cr-hl-two span { font-size:11px; font-weight:700; color:#78716C; text-transform:uppercase; letter-spacing:.05em; }
+.cr-hl-two b { font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; }
+.cr-hl-two i { font-size:10.5px; font-style:normal; color:#A8A29E; }
+
 /* ── Дополнительные блоки анализа ── */
 .pr-block { background:var(--surf,#fff); border:1px solid var(--bdr); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
 .pr-block-title { font-weight:800; font-size:13px; color:var(--ink2); margin-bottom:12px; }
@@ -2372,13 +2420,13 @@ function printClientReport(){
   });
   var cessions = all.filter(function(c){ return c.cessionary; }).length;
 
-  // ── Запас на новый платёж ──
-  var limit = null, pm = null, kd = null;
-  if(income && MORT){
-    pm = MORT.mrp * MORT.pmOther; kd = mortKd(income);   // базовый ПМ, 1 чел. — как в Excel
-    var res = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
-    limit = Math.min(Math.round(income*kd - load), Math.round(income - income*res - pm - load));
-  }
+  // ── Запас на новый платёж (состав семьи и коэффициент — из настроек парсера) ──
+  var cMain = prsMain(income, load);
+  var cNaur = (income && MORT) ? prsCalc(income, load, PRS.members, prsKNauryz()) : null;
+  var limit = cMain ? cMain.limit : null;
+  var pm = cMain ? cMain.pm : null, kd = cMain ? cMain.kd : null;
+  var famTxt = PRS.members + (PRS.members === 1 ? ' человек'
+             : (PRS.members < 5 ? ' человека' : ' человек'));
 
   var today = new Date().toLocaleDateString('ru-RU');
   var who = S.clientName ? ('Подготовил: ' + S.clientName) : '';
@@ -2436,17 +2484,34 @@ function printClientReport(){
     + '<tr><td>Платежи в месяц</td><td><b>' + fmtN(load) + ' ₸</b></td></tr>'
     + (income ? '<tr><td>Средняя зарплата (ЕНПФ)</td><td><b>' + fmtN(income) + ' ₸</b></td></tr>' : '')
     + (income ? '<tr><td>Остаётся после платежей</td><td><b>' + fmtN(income - load) + ' ₸</b></td></tr>' : '')
+    + (pm ? '<tr><td>Прожиточный минимум (' + famTxt + ')</td><td><b>' + fmtN(pm) + ' ₸</b></td></tr>' : '')
     + '<tr><td>Просрочка сейчас</td><td><b>' + (nowOverdue.length ? (nowOverdue.length + ' договор(ов)') : 'нет') + '</b></td></tr>'
     + '<tr><td>Худшая просрочка за историю</td><td><b>' + (worstDays ? (worstDays + ' дн.') : 'не было') + '</b></td></tr>'
     + (cessions ? '<tr><td>Передача долга коллекторам</td><td><b>' + cessions + '</b></td></tr>' : '');
 
-  var limitBlock = (limit !== null)
-    ? '<div class="cr-highlight"><div class="cr-hl-lbl">Доступный платёж по новому кредиту</div>'
-      + '<div class="cr-hl-val">' + (limit > 0 ? (fmtN(limit) + ' ₸ / мес') : 'нет запаса') + '</div>'
-      + '<div class="cr-hl-note">Рассчитано по методике банка: коэффициент долговой нагрузки '
-      + Math.round(kd*100) + '% и прожиточный минимум на одного человека. '
-      + 'Точная сумма зависит от состава семьи и программы.</div></div>'
-    : '';
+  var limitBlock = '';
+  if(limit !== null){
+    var hlVal;
+    if(PRS.mode === 'both' && cNaur){
+      // сводка 50/50: обычные программы и Наурыз рядом
+      hlVal = '<div class="cr-hl-two">'
+        + '<div><span>Обычные программы</span><b>'
+        +   (cMain.limit > 0 ? (fmtN(cMain.limit)+' ₸/мес') : 'нет запаса') + '</b>'
+        +   '<i>ПМ × ' + prsKOther() + ' = ' + fmtN(cMain.pm) + ' ₸</i></div>'
+        + '<div><span>Наурыз</span><b>'
+        +   (cNaur.limit > 0 ? (fmtN(cNaur.limit)+' ₸/мес') : 'нет запаса') + '</b>'
+        +   '<i>ПМ × ' + prsKNauryz() + ' = ' + fmtN(cNaur.pm) + ' ₸</i></div>'
+        + '</div>';
+    } else {
+      hlVal = '<div class="cr-hl-val">' + (limit > 0 ? (fmtN(limit) + ' ₸ / мес') : 'нет запаса') + '</div>';
+    }
+    limitBlock = '<div class="cr-highlight"><div class="cr-hl-lbl">Доступный платёж по новому кредиту</div>'
+      + hlVal
+      + '<div class="cr-hl-note">Расчёт на семью ' + famTxt + '. Берётся меньшее из двух ограничений: '
+      + '<b>КД</b> — ' + Math.round(kd*100) + '% от дохода за вычетом текущих платежей; '
+      + '<b>ЧСД</b> — доход минус прожиточный минимум и резерв. '
+      + 'Окончательная сумма зависит от программы и требований банка.</div></div>';
+  }
 
   var listItems = recs.map(function(r,i){ return '<li>' + r + '</li>'; }).join('');
 
@@ -2600,12 +2665,8 @@ function renderPayoffScenarios(d, active){
   if(!payers.length) return '';
 
   var income = Number(d.srzp)||0, load = Number(d.monthly_load)||0;
-  var baseLimit = null;
-  if(income && MORT){
-    var pm = MORT.mrp * MORT.pmOther, kd = mortKd(income);   // базовый ПМ, 1 чел. — как в Excel
-    var res = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
-    baseLimit = Math.min(Math.round(income*kd - load), Math.round(income - income*res - pm - load));
-  }
+  var _bc = prsMain(income, load);            // состав семьи и коэффициент — из настроек парсера
+  var baseLimit = _bc ? _bc.limit : null;
 
   var rows = payers.map(function(c){
     var pay = Number(c.periodic_payment)||0;
@@ -2633,6 +2694,78 @@ function renderPayoffScenarios(d, active){
     + '</div>';
 }
 
+// ═══ Параметры расчёта в парсере: состав семьи и коэффициент ПМ ═══
+// Расчёт идёт от двух величин: ЧСД (чистый совокупный доход за вычетом
+// прожиточного минимума) и КД (коэффициент долговой нагрузки).
+// Берётся меньшее из двух — так считает банк.
+var PRS = { members: 1, mode: 'both' };   // mode: both | other (13) | nauryz (10)
+try{
+  var _ps = JSON.parse(localStorage.getItem('opv_prs') || '{}');
+  if(_ps.members) PRS.members = Math.max(1, Math.min(12, Number(_ps.members)||1));
+  if(_ps.mode) PRS.mode = _ps.mode;
+}catch(e){}
+
+function prsSave(){ try{ localStorage.setItem('opv_prs', JSON.stringify(PRS)); }catch(e){} }
+function prsKOther(){ return (MORT && MORT.pmOther)  || 13; }
+function prsKNauryz(){ return (MORT && MORT.pmNauryz) || 10; }
+
+// Один вариант расчёта под конкретный коэффициент ПМ
+function prsCalc(income, load, members, kPm){
+  if(!income || !MORT) return null;
+  var m   = Math.max(1, Math.round(Number(members)||1));
+  var pm  = MORT.mrp * kPm * m;
+  var kd  = mortKd(income);
+  var res = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
+  var byKd  = Math.round(income * kd - load);                    // ограничение по КД
+  var chsd  = Math.round(income - income * res - pm);            // чистый совокупный доход
+  var byChsd = chsd - load;                                      // ограничение по ЧСД
+  return { pm:pm, kd:kd, members:m, k:kPm, chsd:chsd,
+           byKd:byKd, byChsd:byChsd,
+           limit: Math.min(byKd, byChsd),
+           by: byKd <= byChsd ? 'КД' : 'ЧСД' };
+}
+
+// Основной вариант — тот, что уходит в PDF и сценарии закрытия.
+// В режиме «оба» за основу берём обычные программы (ПМ×13).
+function prsMain(income, load){
+  var k = (PRS.mode === 'nauryz') ? prsKNauryz() : prsKOther();
+  return prsCalc(income, load, PRS.members, k);
+}
+
+function prsSetMembers(v){
+  PRS.members = Math.max(1, Math.min(12, Math.round(Number(v)||1)));
+  prsSave(); if(_lastParse) renderParse(_lastParse);
+}
+function prsSetMode(m){ PRS.mode = m; prsSave(); if(_lastParse) renderParse(_lastParse); }
+
+// Панель ввода: сколько человек в семье и какой коэффициент ПМ
+function prsPanel(){
+  function b(m, txt){
+    return '<button type="button" class="prs-seg'+(PRS.mode===m?' on':'')+'" '
+         + 'onclick="prsSetMode(\''+m+'\')">'+txt+'</button>';
+  }
+  return '<div class="prs-cfg">'
+    + '<div class="prs-cfg-f"><label class="prs-cfg-l" for="prsMembers">Человек в семье</label>'
+    +   '<input class="prs-cfg-i" id="prsMembers" type="number" min="1" max="12" step="1" '
+    +   'value="'+PRS.members+'" oninput="prsSetMembers(this.value)"></div>'
+    + '<div class="prs-cfg-f"><span class="prs-cfg-l">Коэффициент ПМ</span>'
+    +   '<div class="prs-segs">'
+    +     b('other','×'+prsKOther()+' обычные') + b('nauryz','×'+prsKNauryz()+' Наурыз') + b('both','оба')
+    +   '</div></div>'
+    + '</div>';
+}
+
+// Строка сводки по одному варианту
+function prsVariantRow(c, title, hint){
+  var ok = c.limit > 0;
+  return '<div class="prs-var'+(ok?'':' bad')+'">'
+    + '<div class="prs-var-h"><b>'+title+'</b><span>'+hint+'</span></div>'
+    + '<div class="prs-var-v">'+(ok ? (fmtN(c.limit)+' ₸/мес') : ('не хватает '+fmtN(Math.abs(c.limit))+' ₸/мес'))+'</div>'
+    + '<div class="prs-var-d">ПМ '+fmtN(c.pm)+' ₸ · ЧСД '+fmtN(c.chsd)+' ₸ · КД '+Math.round(c.kd*100)+'%'
+    +   ' · ограничивает <b>'+c.by+'</b></div>'
+    + '</div>';
+}
+
 // Анализ по доходу: свободные деньги, лимит платежа по методике банка
 // и запас — сколько клиент ещё потянет. Считается той же формулой, что
 // на вкладке «Ипотека» (КД по доходу + прожиточный минимум).
@@ -2655,29 +2788,38 @@ function renderIncomeAnalysis(d){
     + '<div class="pr-inc-row total"><span>= свободный доход</span><b'+(free<0?' class="pr-bad"':'')+'>'+fmtN(free)+' ₸</b></div>';
 
   // Лимит банка считаем, только если конфиг (МРП, КД, ПМ) уже пришёл с сервера
-  var verdict = '', note = '';
+  var verdict = '', note = '', cfg = '';
   if(MORT){
-    var pm  = MORT.mrp * MORT.pmOther;            // базовый ПМ, 1 чел. — как в Excel
-    var kd  = mortKd(income);
-    var res = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
-    var m1  = Math.round(income * kd - load);
-    var m2  = Math.round(income - income * res - pm - load);
-    var limit = Math.min(m1, m2);                 // сколько ещё потянет сверх текущего
-    var cls = limit > 0 ? 'ok' : 'bad';
+    cfg = prsPanel();
+    var cOther  = prsCalc(income, load, PRS.members, prsKOther());
+    var cNauryz = prsCalc(income, load, PRS.members, prsKNauryz());
+    var kd = cOther.kd;
+    var mem = PRS.members > 1 ? (PRS.members + ' чел.') : '1 чел.';
 
-    rows += '<div class="pr-inc-row dim"><span>− прожиточный минимум (1 чел.)</span><b>'+fmtN(pm)+' ₸</b></div>';
-    verdict = '<div class="pr-inc-verdict '+cls+'">'
-      + '<span>'+(limit > 0 ? 'Запас на новый платёж' : 'Лимит банка исчерпан')+'</span>'
-      + '<b>'+(limit > 0 ? (fmtN(limit)+' ₸/мес') : ('не хватает '+fmtN(Math.abs(limit))+' ₸/мес'))+'</b>'
-      + '</div>';
-    note = 'Расчёт по методике банка: коэффициент долговой нагрузки '+Math.round(kd*100)+'% и прожиточный минимум на одного человека. '
-         + 'Для точного расчёта с составом семьи и программой — вкладка «Ипотека».';
+    if(PRS.mode === 'both'){
+      rows += '<div class="pr-inc-row dim"><span>− прожиточный минимум ('+mem+')</span>'
+            + '<b>'+fmtN(cOther.pm)+' ₸ / '+fmtN(cNauryz.pm)+' ₸</b></div>';
+      verdict = '<div class="prs-vars">'
+        + prsVariantRow(cOther,  'Обычные программы', 'ПМ × '+prsKOther())
+        + prsVariantRow(cNauryz, 'Наурыз',            'ПМ × '+prsKNauryz())
+        + '</div>';
+    } else {
+      var c = (PRS.mode === 'nauryz') ? cNauryz : cOther;
+      rows += '<div class="pr-inc-row dim"><span>− прожиточный минимум ('+mem+', ×'+c.k+')</span><b>'+fmtN(c.pm)+' ₸</b></div>';
+      verdict = '<div class="prs-vars">'
+        + prsVariantRow(c, PRS.mode === 'nauryz' ? 'Наурыз' : 'Обычные программы', 'ПМ × '+c.k)
+        + '</div>';
+    }
+    note = 'Считается по двум ограничениям, берётся меньшее: <b>КД</b> — '+Math.round(kd*100)+'% от дохода минус текущие платежи; '
+         + '<b>ЧСД</b> — доход минус резерв '+Math.round((MORT.incomeReservePct!=null?MORT.incomeReservePct:0.10)*100)+'%, '
+         + 'минус прожиточный минимум (МРП '+fmtN(MORT.mrp)+' × коэффициент × '+PRS.members+'), минус текущие платежи.';
   } else {
     note = 'Лимит по методике банка появится после загрузки ставок — откройте вкладку «Ипотека».';
   }
 
   return '<div class="pr-income">'
     + '<div class="pr-inc-title">Анализ по доходу</div>'
+    + cfg
     + '<div class="pr-inc-rows">'+rows+'</div>'
     + verdict
     + '<div class="pr-inc-note">'+note+'</div>'
