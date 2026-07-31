@@ -639,6 +639,18 @@ body {
   .ntab-sec { display:none; }
   .nav-more { display:block; }
 }
+/* совсем узкие экраны: ужимаем вкладки и убираем «Бланки» в меню «Ещё»,
+   чтобы строка помещалась целиком и не требовала горизонтального скролла */
+@media(max-width:560px){
+  .ntab { padding:12px 9px; font-size:11.5px; gap:4px; }
+  .ntab .ic { width:16px; height:16px; }
+  .nav-tabs { padding:0 8px; }
+  /* на телефоне в строке остаются Главная, Расчёт ОПВ и Ипотека —
+     остальное одним тапом в «Ещё», чтобы строка не требовала скролла */
+  .ntab[data-tab="blank"], .ntab[data-tab="dep"] { display:none; }
+}
+.more-menu .mm-narrow { display:none; }
+@media(max-width:560px){ .more-menu .mm-narrow { display:block; } }
 
 /* ── Дашборд ── */
 .dash-hero { margin-bottom:18px; }
@@ -917,6 +929,8 @@ body {
     <div class="nav-more">
       <button class="ntab nmore-btn" onclick="toggleMore(event)"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg></span>Ещё</button>
       <div class="more-menu" id="moreMenu">
+        <button class="mm-narrow" onclick="goTab('dep')">Депозиты</button>
+        <button class="mm-narrow" onclick="goTab('blank')">Бланки</button>
         <button onclick="goTab('buh')">Бухгалтерия</button>
         <button onclick="goTab('sc')">Сценарии</button>
         <button onclick="goTab('parser')">Парсер ПКБ/ГКБ</button>
