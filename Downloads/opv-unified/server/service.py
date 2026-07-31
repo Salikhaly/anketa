@@ -56,19 +56,6 @@ def health():
     return {"ok": True}
 
 
-@app.get("/debug-env")
-def debug_env():
-    """Временный диагностический эндпоинт: не раскрывает сам URL, только факт наличия."""
-    import os
-    val = os.environ.get("APPS_SCRIPT_URL", "")
-    return {
-        "apps_script_url_is_set": bool(val.strip()),
-        "length": len(val),
-        "starts_with_https": val.strip().startswith("https://") if val else False,
-        "ends_with_exec": val.strip().endswith("/exec") if val else False,
-    }
-
-
 @app.post("/parse")
 async def parse(
     token: str = Form(""),
