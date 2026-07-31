@@ -779,6 +779,23 @@ body {
 .pr-inc-verdict.bad b { color:#991B1B; }
 .pr-inc-note { font-size:11px; color:var(--muted); line-height:1.55; margin-top:10px; }
 
+/* ── Дополнительные блоки анализа ── */
+.pr-block { background:var(--surf,#fff); border:1px solid var(--bdr); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+.pr-block-title { font-weight:800; font-size:13px; color:var(--ink2); margin-bottom:12px; }
+.pr-risk-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; }
+.pr-risk-card { border:1px solid var(--bdr); border-left:3px solid var(--faint); border-radius:10px; padding:10px 12px; background:var(--surf,#fff); }
+.pr-risk-card.ok   { border-left-color:var(--grn); background:var(--ok_bg,#F0FDF4); }
+.pr-risk-card.warn { border-left-color:var(--gold3); background:var(--warn_bg,#FFFBEB); }
+.pr-risk-card.bad  { border-left-color:var(--red3); background:var(--err_bg,#FEF2F2); }
+.pr-risk-card span { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; display:block; }
+.pr-risk-card b { font-size:16px; color:var(--ink); display:block; margin:3px 0 2px; font-variant-numeric:tabular-nums; }
+.pr-risk-card.bad b  { color:#991B1B; }
+.pr-risk-card.warn b { color:#92400E; }
+.pr-risk-card.ok b   { color:#166534; }
+.pr-risk-card small { font-size:11px; color:var(--muted); line-height:1.45; display:block; }
+.pr-scn-sub { font-size:10.5px; color:var(--muted); margin-top:2px; }
+.pr-scn-gain { color:var(--grn); }
+
 /* ── Ипотечный калькулятор ── */
 .mort-inputs { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
 .mort-pm-note { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.5; }
@@ -2035,6 +2052,9 @@ function renderParse(d){
     + '</div>';
 
   h += renderIncomeAnalysis(d);
+  h += renderRiskProfile(d, active, compRecent, compOld);
+  h += renderDebtStructure(d, active);
+  h += renderPayoffScenarios(d, active);
 
   if(active.length){
     h += '<div class="pr-sec">Действующие ('+active.length+')</div><div class="pr-table-wrap"><table class="pr-table"><thead><tr><th>Банк</th><th>Тип</th><th>Сумма</th><th>Платёж</th><th>Остаток</th><th>Просрочка</th></tr></thead><tbody>';
@@ -2067,6 +2087,167 @@ function renderParse(d){
 
   h += '<button class="btn btn-v" style="margin-top:16px" onclick="downloadExcel()">⬇ Скачать Excel-анкету</button>';
   el('parseResult').innerHTML=h; el('parseResult').style.display='block';
+}
+
+// ── Вспомогательное: дата «дд.мм.гггг» → Date, и «сколько лет назад» ──
+function _prDate(s){
+  var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s||'');
+  return m ? new Date(+m[3], +m[2]-1, +m[1]) : null;
+}
+function _prYearsAgo(dt){
+  if(!dt) return null;
+  return (Date.now() - dt.getTime()) / (365.25*24*3600*1000);
+}
+function _prAgoText(dt){
+  var y = _prYearsAgo(dt);
+  if(y===null) return '';
+  if(y < 1)  return Math.max(1, Math.round(y*12)) + ' мес. назад';
+  var yy = Math.floor(y);
+  var word = yy%10===1 && yy%100!==11 ? 'год' : ((yy%10>=2&&yy%10<=4)&&!(yy%100>=12&&yy%100<=14) ? 'года' : 'лет');
+  return yy + ' ' + word + ' назад';
+}
+
+// ── РИСК-ПРОФИЛЬ: худшая просрочка, свежесть проблем, цессии ──
+function renderRiskProfile(d, active, compRecent, compOld){
+  var all = active.concat(compRecent, compOld);
+  if(!all.length) return '';
+
+  // Худшая просрочка за всю историю (по максимуму дней)
+  var worst = null;
+  all.forEach(function(c){
+    var days = Math.max(Number(c.max_overdue_days)||0, Number(c.current_overdue_days)||0);
+    if(days > 0 && (!worst || days > worst.days)){
+      worst = {days:days, bank:c.creditor, amount:Number(c.max_overdue_amount)||Number(c.current_overdue_amount)||0, date:c.end_date};
+    }
+  });
+
+  // Самая свежая проблемная запись (просрочка или цессия) среди завершённых
+  var freshest = null;
+  compRecent.concat(compOld).forEach(function(c){
+    var dt = _prDate(c.end_date);
+    if(dt && (!freshest || dt > freshest.dt)) freshest = {dt:dt, bank:c.creditor};
+  });
+
+  // Цессии — кому передавали долг
+  var cessions = all.filter(function(c){ return c.cessionary; });
+
+  // Текущие просрочки по действующим
+  var nowOverdue = active.filter(function(c){ return (Number(c.current_overdue_days)||0) > 0; });
+
+  var cards = '';
+
+  if(worst){
+    var sev = worst.days >= 90 ? 'bad' : (worst.days >= 30 ? 'warn' : 'ok');
+    cards += '<div class="pr-risk-card '+sev+'">'
+      + '<span>Худшая просрочка за историю</span>'
+      + '<b>'+worst.days+' дн.</b>'
+      + '<small>'+(worst.bank||'—')+(worst.amount?(' · '+fmtN(worst.amount)+' ₸'):'')+'</small>'
+      + '</div>';
+  } else {
+    cards += '<div class="pr-risk-card ok"><span>Просрочки за историю</span><b>нет</b>'
+      + '<small>Ни по одному договору в отчёте</small></div>';
+  }
+
+  if(nowOverdue.length){
+    cards += '<div class="pr-risk-card bad"><span>Просрочка сейчас</span><b>'+nowOverdue.length+' догов.</b>'
+      + '<small>'+nowOverdue.map(function(c){ return (c.creditor||'')+' — '+c.current_overdue_days+' дн.'; }).join('; ')+'</small></div>';
+  } else {
+    cards += '<div class="pr-risk-card ok"><span>Просрочка сейчас</span><b>нет</b>'
+      + '<small>По действующим договорам чисто</small></div>';
+  }
+
+  if(freshest){
+    var yrs = _prYearsAgo(freshest.dt);
+    var fsev = yrs < 1 ? 'bad' : (yrs < 3 ? 'warn' : 'ok');
+    cards += '<div class="pr-risk-card '+fsev+'"><span>Последняя проблема закрыта</span>'
+      + '<b>'+_prAgoText(freshest.dt)+'</b>'
+      + '<small>'+freshest.dt.toLocaleDateString('ru-RU')+' · '+(freshest.bank||'—')+'</small></div>';
+  }
+
+  if(cessions.length){
+    cards += '<div class="pr-risk-card warn"><span>Передача долга (цессия)</span><b>'+cessions.length+'</b>'
+      + '<small>'+cessions.map(function(c){ return c.cessionary; }).join('; ')+'</small></div>';
+  }
+
+  if(d.pkr){
+    cards += '<div class="pr-risk-card"><span>Кредитный рейтинг ПКР</span><b>'+d.pkr+'</b>'
+      + '<small>Значение из отчёта бюро</small></div>';
+  }
+
+  return '<div class="pr-block"><div class="pr-block-title">Кредитная история — риск-профиль</div>'
+    + '<div class="pr-risk-grid">'+cards+'</div></div>';
+}
+
+// ── СТРУКТУРА ДОЛГА: типы, погашенность, банки ──
+function renderDebtStructure(d, active){
+  if(!active.length) return '';
+
+  var cards = 0, loans = 0, cardsOut = 0, loansOut = 0, cardsPay = 0, loansPay = 0;
+  var totalAmount = 0, totalOut = 0;
+  var banks = {};
+  active.forEach(function(c){
+    var isCard = /карт/i.test(c.financing_type||'');
+    var out = Number(c.outstanding)||0, pay = Number(c.periodic_payment)||0, amt = Number(c.contract_amount)||0;
+    totalAmount += amt; totalOut += out;
+    if(isCard){ cards++; cardsOut += out; cardsPay += pay; }
+    else { loans++; loansOut += out; loansPay += pay; }
+    var b = c.creditor || '—';
+    banks[b] = (banks[b]||0) + out;
+  });
+
+  var repaidPct = totalAmount > 0 ? Math.round((totalAmount - totalOut) / totalAmount * 100) : null;
+  var bankNames = Object.keys(banks);
+  var topBank = bankNames.sort(function(a,b){ return banks[b]-banks[a]; })[0];
+
+  var rows = '';
+  if(cards) rows += '<div class="pr-inc-row"><span>Кредитные карты ('+cards+')</span><b>'+fmtN(cardsOut)+' ₸'+(cardsPay?(' · платёж '+fmtN(cardsPay)):'')+'</b></div>';
+  if(loans) rows += '<div class="pr-inc-row"><span>Займы ('+loans+')</span><b>'+fmtN(loansOut)+' ₸'+(loansPay?(' · платёж '+fmtN(loansPay)):'')+'</b></div>';
+  rows += '<div class="pr-inc-row total"><span>Всего остаток</span><b>'+fmtN(totalOut)+' ₸</b></div>';
+  if(repaidPct !== null)
+    rows += '<div class="pr-inc-row dim"><span>Погашено от суммы договоров</span><b>'+repaidPct+'% из '+fmtN(totalAmount)+' ₸</b></div>';
+  rows += '<div class="pr-inc-row dim"><span>Банков-кредиторов</span><b>'+bankNames.length+(topBank?(' · крупнейший: '+topBank):'')+'</b></div>';
+
+  return '<div class="pr-block"><div class="pr-block-title">Структура действующего долга</div>'
+    + '<div class="pr-inc-rows">'+rows+'</div></div>';
+}
+
+// ── СЦЕНАРИИ: что даст закрытие каждого кредита ──
+function renderPayoffScenarios(d, active){
+  var payers = active.filter(function(c){ return (Number(c.periodic_payment)||0) > 0; });
+  if(!payers.length) return '';
+
+  var income = Number(d.srzp)||0, load = Number(d.monthly_load)||0;
+  var baseLimit = null;
+  if(income && MORT){
+    var pm = mortPm('nauryz20', 1), kd = mortKd(income);
+    var res = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
+    baseLimit = Math.min(Math.round(income*kd - load), Math.round(income - income*res - pm - load));
+  }
+
+  var rows = payers.map(function(c){
+    var pay = Number(c.periodic_payment)||0;
+    var out = Number(c.outstanding)||0;
+    var months = (pay > 0 && out > 0) ? Math.ceil(out / pay) : null;   // грубая оценка без процентов
+    var newLimit = baseLimit !== null ? baseLimit + pay : null;
+    return '<tr>'
+      + '<td>'+(c.creditor||'—')+'<div class="pr-scn-sub">'+(c.financing_type||'')+'</div></td>'
+      + '<td>'+fmtN(out)+' ₸</td>'
+      + '<td>'+(months ? ('≈ '+months+' мес.') : '—')+'</td>'
+      + '<td><b>+'+fmtN(pay)+' ₸/мес</b></td>'
+      + '<td>'+(newLimit!==null ? ('<b class="pr-scn-gain">'+fmtN(newLimit)+' ₸</b>') : '<span class="pr-st">нужна пенсионка</span>')+'</td>'
+      + '</tr>';
+  }).join('');
+
+  var note = baseLimit !== null
+    ? 'Столбец «Запас станет» — сколько клиент сможет платить по новому кредиту после закрытия этого договора (сейчас запас '+fmtN(baseLimit)+' ₸/мес).'
+    : 'Загрузите пенсионную выписку — тогда посчитаем, как изменится доступный платёж по ипотеке.';
+
+  return '<div class="pr-block"><div class="pr-block-title">Что даст досрочное закрытие</div>'
+    + '<div class="pr-table-wrap"><table class="pr-table"><thead><tr>'
+    + '<th>Договор</th><th>Остаток</th><th>Срок при текущем платеже</th><th>Освободится</th><th>Запас станет</th>'
+    + '</tr></thead><tbody>'+rows+'</tbody></table></div>'
+    + '<div class="pr-inc-note">'+note+' Срок оценён делением остатка на платёж, без учёта процентов — фактический может отличаться.</div>'
+    + '</div>';
 }
 
 // Анализ по доходу: свободные деньги, лимит платежа по методике банка
