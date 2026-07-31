@@ -29,6 +29,28 @@ app.add_middleware(
 )
 
 
+# Vercel в зависимости от конфигурации может передать путь как «/parse»
+# либо как «/api/index/parse» (или просто «/api/index»). Нормализуем, чтобы
+# маршруты находились в любом случае и деплой не ломался от смены настроек.
+@app.middleware("http")
+async def _strip_vercel_prefix(request, call_next):
+    path = request.scope.get("path", "")
+    for prefix in ("/api/index", "/api"):
+        if path == prefix:
+            request.scope["path"] = "/"
+            break
+        if path.startswith(prefix + "/"):
+            request.scope["path"] = path[len(prefix):]
+            break
+    return await call_next(request)
+
+
+@app.get("/")
+def root():
+    """Короткая проверка живости — чтобы открытый в браузере адрес не пугал 404."""
+    return {"ok": True, "service": "Парсер ПКБ/ГКБ", "endpoints": ["/health", "/parse"]}
+
+
 @app.get("/health")
 def health():
     return {"ok": True}

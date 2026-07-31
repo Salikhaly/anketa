@@ -1,3 +1,4 @@
 .vercel
 .env.production
 server/__pycache__/
+.env*
