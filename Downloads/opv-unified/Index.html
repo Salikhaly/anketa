@@ -753,6 +753,31 @@ body {
 .pr-stat b { font-size:15px; color:var(--ink); font-variant-numeric:tabular-nums; display:block; margin-top:3px; }
 .pr-stat b.pr-bad { color:var(--red3); }
 .pr-sec-sub { font-size:11px; color:var(--muted); font-weight:500; margin-left:6px; }
+.pr-date { white-space:nowrap; font-variant-numeric:tabular-nums; }
+
+/* ── Анализ по доходу ── */
+.pr-income { background:var(--surf,#fff); border:1px solid var(--bdr); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+.pr-income.none { background:var(--bg2,var(--v4)); border-style:dashed; display:flex; flex-direction:column; gap:4px; }
+.pr-income.none b { font-size:13.5px; color:var(--ink2); }
+.pr-income.none span { font-size:12px; color:var(--muted); line-height:1.55; }
+.pr-inc-title { font-weight:800; font-size:13px; color:var(--ink2); margin-bottom:10px; }
+.pr-inc-rows { display:flex; flex-direction:column; gap:6px; }
+.pr-inc-row { display:flex; justify-content:space-between; align-items:baseline; font-size:13px; gap:12px; }
+.pr-inc-row span { color:var(--ink2); }
+.pr-inc-row b { font-variant-numeric:tabular-nums; color:var(--ink); white-space:nowrap; }
+.pr-inc-row.dim span, .pr-inc-row.dim b { color:var(--muted); font-size:12px; font-weight:500; }
+.pr-inc-row.total { border-top:1px solid var(--bdr); padding-top:7px; margin-top:2px; font-weight:700; }
+.pr-inc-row.total span { color:var(--ink); font-weight:700; }
+.pr-inc-verdict { display:flex; justify-content:space-between; align-items:center; gap:12px; border-radius:10px; padding:11px 14px; margin-top:12px; }
+.pr-inc-verdict.ok  { background:var(--ok_bg,#F0FDF4); border:1px solid #BBF7D0; }
+.pr-inc-verdict.bad { background:var(--err_bg,#FEF2F2); border:1px solid #FECACA; }
+.pr-inc-verdict span { font-size:12.5px; font-weight:700; }
+.pr-inc-verdict.ok  span { color:#166534; }
+.pr-inc-verdict.bad span { color:#991B1B; }
+.pr-inc-verdict b { font-size:16px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.pr-inc-verdict.ok  b { color:#166534; }
+.pr-inc-verdict.bad b { color:#991B1B; }
+.pr-inc-note { font-size:11px; color:var(--muted); line-height:1.55; margin-top:10px; }
 
 /* ── Ипотечный калькулятор ── */
 .mort-inputs { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
@@ -1645,6 +1670,7 @@ function goTab(name){
   if(name==='dep')  loadTool('DepositCalc','depFrame','depLoading');
   if(name==='blank')loadTool('DepositBlanks','blankFrame','blankLoading');
   if(name==='mort') initMortgage();
+  if(name==='parser') initMortgage();   // конфиг нужен для анализа по доходу в отчёте
 }
 
 function toggleMore(e){ if(e){e.stopPropagation();} var m=el('moreMenu'); if(m) m.classList.toggle('open'); }
@@ -2008,6 +2034,8 @@ function renderParse(d){
     + '<div class="pr-stat"><span>Проблемных записей</span><b'+(problemCount>0?' class="pr-bad"':'')+'>'+problemCount+'</b></div>'
     + '</div>';
 
+  h += renderIncomeAnalysis(d);
+
   if(active.length){
     h += '<div class="pr-sec">Действующие ('+active.length+')</div><div class="pr-table-wrap"><table class="pr-table"><thead><tr><th>Банк</th><th>Тип</th><th>Сумма</th><th>Платёж</th><th>Остаток</th><th>Просрочка</th></tr></thead><tbody>';
     var sumAmount=0, sumPayment=0, sumOutstanding=0;
@@ -2022,12 +2050,15 @@ function renderParse(d){
 
   function renderCompletedTable(list, label){
     if(!list.length) return '';
-    var out = '<div class="pr-sec">'+label+' <span class="pr-sec-sub">('+list.length+')</span></div><div class="pr-table-wrap"><table class="pr-table"><thead><tr><th>Банк</th><th>Тип</th><th>Макс. просрочка</th><th>Статус</th></tr></thead><tbody>';
+    var out = '<div class="pr-sec">'+label+' <span class="pr-sec-sub">('+list.length+')</span></div><div class="pr-table-wrap"><table class="pr-table"><thead><tr><th>Банк</th><th>Тип</th><th>Завершён</th><th>Макс. просрочка</th><th>Статус</th></tr></thead><tbody>';
     list.forEach(function(c){
       // "Статус" из PDF иногда содержит "слипшийся" текст из соседних колонок —
       // показываем только цессию (как в Excel), без сырого статуса из отчёта.
       var st = c.cessionary ? ('Цессия → '+c.cessionary) : '—';
-      out+='<tr><td>'+(c.creditor||'—')+'</td><td>'+(c.financing_type||'')+'</td><td>'+((c.max_overdue_days||0)>0?('<span class="pr-bad">'+c.max_overdue_days+' дн.'+(c.max_overdue_amount?' · '+fmtN(c.max_overdue_amount)+' ₸':'')+'</span>'):'—')+'</td><td class="pr-st">'+st+'</td></tr>';
+      // end_date — дата ФАКТИЧЕСКОГО завершения (ПКБ: «Дата фактического
+      // завершения», ГКБ: «Нақты өтелген күні»), а не плановая дата окончания.
+      var fin = c.end_date ? ('<b>'+c.end_date+'</b>') : '<span class="pr-st">нет данных</span>';
+      out+='<tr><td>'+(c.creditor||'—')+'</td><td>'+(c.financing_type||'')+'</td><td class="pr-date">'+fin+'</td><td>'+((c.max_overdue_days||0)>0?('<span class="pr-bad">'+c.max_overdue_days+' дн.'+(c.max_overdue_amount?' · '+fmtN(c.max_overdue_amount)+' ₸':'')+'</span>'):'—')+'</td><td class="pr-st">'+st+'</td></tr>';
     });
     return out + '</tbody></table></div>';
   }
@@ -2036,6 +2067,57 @@ function renderParse(d){
 
   h += '<button class="btn btn-v" style="margin-top:16px" onclick="downloadExcel()">⬇ Скачать Excel-анкету</button>';
   el('parseResult').innerHTML=h; el('parseResult').style.display='block';
+}
+
+// Анализ по доходу: свободные деньги, лимит платежа по методике банка
+// и запас — сколько клиент ещё потянет. Считается той же формулой, что
+// на вкладке «Ипотека» (КД по доходу + прожиточный минимум).
+function renderIncomeAnalysis(d){
+  var income = Number(d.srzp) || 0;
+  var load   = Number(d.monthly_load) || 0;
+
+  if(!income){
+    return '<div class="pr-income none">'
+      + '<b>Анализ по доходу недоступен</b>'
+      + '<span>Загрузите вместе с отчётом пенсионную выписку ЕНПФ — сервис посчитает среднюю зарплату, '
+      + 'свободный доход и сколько клиент ещё потянет по методике банка.</span>'
+      + '</div>';
+  }
+
+  var free = income - load;                       // остаётся после текущих платежей
+  var rows = ''
+    + '<div class="pr-inc-row"><span>Средняя зарплата (СРЗП)</span><b>'+fmtN(income)+' ₸</b></div>'
+    + '<div class="pr-inc-row"><span>− текущие платежи по кредитам</span><b>'+fmtN(load)+' ₸</b></div>'
+    + '<div class="pr-inc-row total"><span>= свободный доход</span><b'+(free<0?' class="pr-bad"':'')+'>'+fmtN(free)+' ₸</b></div>';
+
+  // Лимит банка считаем, только если конфиг (МРП, КД, ПМ) уже пришёл с сервера
+  var verdict = '', note = '';
+  if(MORT){
+    var pm  = mortPm('nauryz20', 1);              // семья 1 чел. — базовый расчёт
+    var kd  = mortKd(income);
+    var res = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
+    var m1  = Math.round(income * kd - load);
+    var m2  = Math.round(income - income * res - pm - load);
+    var limit = Math.min(m1, m2);                 // сколько ещё потянет сверх текущего
+    var cls = limit > 0 ? 'ok' : 'bad';
+
+    rows += '<div class="pr-inc-row dim"><span>− прожиточный минимум (1 чел.)</span><b>'+fmtN(pm)+' ₸</b></div>';
+    verdict = '<div class="pr-inc-verdict '+cls+'">'
+      + '<span>'+(limit > 0 ? 'Запас на новый платёж' : 'Лимит банка исчерпан')+'</span>'
+      + '<b>'+(limit > 0 ? (fmtN(limit)+' ₸/мес') : ('не хватает '+fmtN(Math.abs(limit))+' ₸/мес'))+'</b>'
+      + '</div>';
+    note = 'Расчёт по методике банка: коэффициент долговой нагрузки '+Math.round(kd*100)+'% и прожиточный минимум на одного человека. '
+         + 'Для точного расчёта с составом семьи и программой — вкладка «Ипотека».';
+  } else {
+    note = 'Лимит по методике банка появится после загрузки ставок — откройте вкладку «Ипотека».';
+  }
+
+  return '<div class="pr-income">'
+    + '<div class="pr-inc-title">Анализ по доходу</div>'
+    + '<div class="pr-inc-rows">'+rows+'</div>'
+    + verdict
+    + '<div class="pr-inc-note">'+note+'</div>'
+    + '</div>';
 }
 
 function downloadExcel(){
