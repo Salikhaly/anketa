@@ -16,12 +16,7 @@ var COL            = { KEY:0, NAME:1, ACTIVE:2, DEVICE:3, DATE:4 };
 var SUB_PRICE           = 25000;                 // цена подписки, ₸/мес
 var KASPI_PHONE         = '+7 771 128 51 35';    // номер Kaspi для перевода
 var KASPI_NAME          = 'Салихалы';            // получатель Kaspi
-var PARSER_DOWNLOAD_URL = '';                    // ссылка на архив десктоп-парсера
 var COL_UNTIL           = 5;                     // колонка F «Действует до»
-
-// Секрет подписи лицензии десктоп-парсера (HMAC).
-// ДОЛЖЕН совпадать с LICENSE_SECRET в license_gate.py.
-var LICENSE_SECRET      = 'ЗАМЕНИ_НА_ДЛИННЫЙ_СЛУЧАЙНЫЙ_СЕКРЕТ_например_kZ9x7Qm2...';
 
 // Куда слать сводку об истекающих подписках. Пусто = на почту владельца скрипта.
 var ADMIN_EMAIL         = '';
@@ -287,15 +282,6 @@ function _subDaysLeft_(until) {
   return Math.round((end - today) / 86400000);
 }
 
-// Подписанный токен лицензии для десктоп-парсера
-function _signLicense_(key, deviceId, expISO, name) {
-  var payloadObj = { k: key, d: deviceId, exp: expISO, n: name };
-  var payload = Utilities.base64Encode(JSON.stringify(payloadObj));
-  var sig = Utilities.base64Encode(
-    Utilities.computeHmacSha256Signature(payload, LICENSE_SECRET));
-  return { token: payload, sig: sig };
-}
-
 function _fmtDate_(d) {
   try { return Utilities.formatDate(new Date(d), 'Asia/Almaty', 'dd.MM.yyyy'); }
   catch (e) { return String(d); }
@@ -377,7 +363,7 @@ function apiLogin(key, deviceId){
   _log_(c.name, key, 'LOGIN', '', '', 0, 0);
   return {
     ok: true, token: token, clientName: c.name,
-    daysLeft: days, parserUrl: PARSER_DOWNLOAD_URL
+    daysLeft: days
   };
 }
 
@@ -396,7 +382,7 @@ function apiMe(t){
     var days = _subDaysLeft_(c.until);
     if (days !== null && days < 0)
       return _payInfo_(s.key, c.name, 'Срок подписки истёк ' + _fmtDate_(c.until) + '.');
-    return { ok: true, clientName: s.client, daysLeft: days, parserUrl: PARSER_DOWNLOAD_URL };
+    return { ok: true, clientName: s.client, daysLeft: days };
   }
   return { ok: true, clientName: s.client };
 }
@@ -875,11 +861,12 @@ function _getAnketasSheet_(){
   if (!sh) {
     sh = ss.insertSheet('Анкеты');
     sh.appendRow(['ID','Дата','Брокер','Ключ','ФИО','ИИН','Бюро','ПКР',
-                  'Договоров','СРЗП','Платежи/мес','Данные (не редактировать)']);
+                  'Договоров','Проблем','Просрочка сейчас','СРЗП','Платежи/мес',
+                  'Данные (не редактировать)']);
     sh.setFrozenRows(1);
-    sh.getRange('A1:L1').setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
-    sh.setColumnWidths(1, 12, [110, 130, 140, 90, 220, 120, 60, 60, 90, 110, 110, 300]);
-    sh.hideColumns(12);   // JSON — служебная колонка, глаза не мозолит
+    sh.getRange('A1:N1').setFontWeight('bold').setBackground('#3B0764').setFontColor('#fff');
+    sh.setColumnWidths(1, 14, [110, 130, 140, 90, 220, 120, 60, 60, 90, 80, 120, 110, 110, 300]);
+    sh.hideColumns(14);   // JSON — служебная колонка, глаза не мозолит
   }
   return sh;
 }
@@ -905,6 +892,8 @@ function apiSaveAnketa(token, a){
     (a.source === 'gkb') ? 'ГКБ' : 'ПКБ',
     Number(a.pkr) || '',
     Number(a.active) || 0,
+    Number(a.problems) || 0,
+    a.overdueNow ? 'ДА' : 'нет',
     Number(a.srzp) || 0,
     Number(a.load) || 0,
     json
@@ -934,7 +923,7 @@ function apiListAnketas(token, query){
   var last = sh.getLastRow();
   if (last < 2) return { ok:true, items:[] };
 
-  var data = sh.getRange(2, 1, last - 1, 11).getValues();
+  var data = sh.getRange(2, 1, last - 1, 13).getValues();
   var q = String(query || '').trim().toLowerCase();
   var out = [];
   for (var i = data.length - 1; i >= 0; i--) {      // свежие сверху
@@ -945,7 +934,9 @@ function apiListAnketas(token, query){
       if (hay.indexOf(q) === -1) continue;
     }
     out.push({ id:r[0], date:r[1], fio:r[4], iin:r[5], bureau:r[6],
-               pkr:r[7], active:r[8], srzp:r[9], load:r[10] });
+               pkr:r[7], active:r[8], problems:r[9],
+               overdueNow: String(r[10]).toUpperCase() === 'ДА',
+               srzp:r[11], load:r[12] });
     if (out.length >= 200) break;
   }
   return { ok:true, items:out };
@@ -958,12 +949,12 @@ function apiGetAnketa(token, id){
   var last = sh.getLastRow();
   if (last < 2) return { ok:false, message:'Анкета не найдена' };
 
-  var data = sh.getRange(2, 1, last - 1, 12).getValues();
+  var data = sh.getRange(2, 1, last - 1, 14).getValues();
   for (var i = 0; i < data.length; i++) {
     if (String(data[i][0]) !== String(id)) continue;
     if (String(data[i][3]) !== String(s.key)) return { ok:false, message:'Нет доступа к этой анкете' };
     try {
-      return { ok:true, data: JSON.parse(data[i][11]), date: data[i][1] };
+      return { ok:true, data: JSON.parse(data[i][13]), date: data[i][1] };
     } catch (e) {
       return { ok:false, message:'Сохранённые данные повреждены' };
     }
@@ -996,12 +987,8 @@ function doPost(e) {
   try {
     var body = (e && e.postData && e.postData.contents)
       ? JSON.parse(e.postData.contents) : {};
-    var action = body.action || 'login';
-    if (action === 'checkToken') {
-      out = apiCheckToken_(String(body.token || ''));
-    } else {
-      out = apiLicense_(String(body.key || ''), String(body.deviceId || ''));
-    }
+    // Единственный внешний вызов — проверка сессии от серверного парсера
+    out = apiCheckToken_(String(body.token || ''));
   } catch (err) {
     out = { ok: false, reason: 'error', message: String(err) };
   }
@@ -1014,40 +1001,6 @@ function apiCheckToken_(token) {
   var s = _refreshSession_(token);
   if (!s) return { ok: false, message: 'Сессия истекла — войдите в сервис заново' };
   return { ok: true, clientName: s.client };
-}
-
-// Проверка ключа + срока + привязки к устройству (для десктоп-парсера)
-function apiLicense_(key, deviceId) {
-  key = String(key || '').trim();
-  deviceId = String(deviceId || '').trim();
-  var c = _clientRow_(key);
-  if (!c || !c.name) return { ok: false, reason: 'badkey',   message: 'Неверный ключ доступа' };
-  if (!c.active)     return { ok: false, reason: 'disabled', message: 'Ключ отключён администратором' };
-  if (!deviceId)     return { ok: false, reason: 'nodevice', message: 'Нет идентификатора устройства' };
-  if (c.device && c.device !== deviceId)
-                     return { ok: false, reason: 'device',   message: 'Ключ привязан к другому устройству' };
-
-  var days = _subDaysLeft_(c.until);
-  if (days !== null && days < 0)
-    return {
-      ok: false, reason: 'expired',
-      message: 'Подписка истекла ' + _fmtDate_(c.until),
-      until: _fmtDate_(c.until),
-      kaspiPhone: KASPI_PHONE, kaspiName: KASPI_NAME, price: SUB_PRICE, key: key
-    };
-
-  if (!c.device) _setDevice_(key, deviceId);
-
-  var end = _untilDate_(c.until);
-  var expISO = end ? Utilities.formatDate(end, 'Asia/Almaty', 'yyyy-MM-dd') : '2999-12-31';
-  var lic = _signLicense_(key, deviceId, expISO, c.name);
-
-  return {
-    ok: true, clientName: c.name, daysLeft: days,
-    until: c.until ? _fmtDate_(c.until) : '',
-    token: lic.token, sig: lic.sig,
-    kaspiPhone: KASPI_PHONE, kaspiName: KASPI_NAME, price: SUB_PRICE
-  };
 }
 
 // ============================================================

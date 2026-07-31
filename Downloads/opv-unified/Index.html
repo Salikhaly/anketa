@@ -769,7 +769,23 @@ body {
 .pr-demo { background:var(--gold5); border:1px solid var(--gold3); color:var(--gold); border-radius:10px; padding:10px 14px; font-size:12px; line-height:1.5; margin-bottom:14px; }
 
 /* ── Блок анализа отчёта ── */
-.pr-verdict { display:flex; gap:14px; align-items:flex-start; border-radius:12px; padding:16px 18px; margin-bottom:16px; border:1px solid; }
+.pr-verdict { display:flex; gap:14px; align-items:center; border-radius:12px; padding:16px 18px; margin-bottom:16px; border:1px solid; }
+.pr-verdict-txt { flex:1; min-width:0; }
+/* главная цифра справа от вердикта — запас на новый платёж */
+.pr-verdict-num {
+  flex-shrink:0; text-align:right; padding-left:18px;
+  border-left:1px solid rgba(0,0,0,.09); display:flex; flex-direction:column; gap:1px;
+}
+.pr-verdict-num span { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; opacity:.75; }
+.pr-verdict-num b { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.15; }
+.pr-verdict-num i { font-size:10.5px; font-style:normal; opacity:.7; }
+.pr-verdict-num.neg b { color:#991B1B; }
+.pr-verdict-num.none b { display:none; }
+@media (max-width:640px){
+  .pr-verdict { flex-wrap:wrap; }
+  .pr-verdict-num { border-left:0; border-top:1px solid rgba(0,0,0,.09);
+                    padding-left:0; padding-top:10px; margin-top:4px; width:100%; text-align:left; }
+}
 .pr-verdict.ok   { background:var(--ok_bg,#F0FDF4); border-color:#BBF7D0; }
 .pr-verdict.warn { background:var(--warn_bg,#FFFBEB); border-color:#FDE68A; }
 .pr-verdict.bad  { background:var(--err_bg,#FEF2F2); border-color:#FECACA; }
@@ -858,7 +874,22 @@ body {
 /* ── База анкет ── */
 .ank-bar { display:flex; gap:10px; align-items:center; margin-bottom:14px; }
 .ank-search { flex:1; }
-.ank-count { font-size:11px; color:var(--muted); font-weight:600; margin-bottom:8px; }
+.ank-count { font-size:11px; color:var(--muted); font-weight:600; }
+.ank-sum { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.ank-sum-i { font-size:11px; font-weight:700; padding:4px 9px; border-radius:20px; }
+.ank-sum-i b { font-variant-numeric:tabular-nums; }
+.ank-b-ok   { background:var(--ok_bg,#F0FDF4); color:#166534; }
+.ank-b-warn { background:#FFFBEB; color:#92400E; }
+.ank-b-bad  { background:var(--err_bg,#FEF2F2); color:#991B1B; }
+.ank-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; margin-right:7px; }
+.ank-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.ank-ok   .ank-dot { background:#16A34A; }
+.ank-warn .ank-dot { background:#D97706; }
+.ank-bad  .ank-dot { background:#DC2626; }
+.ank-ok   { border-left:3px solid #16A34A; }
+.ank-warn { border-left:3px solid #D97706; }
+.ank-bad  { border-left:3px solid #DC2626; }
+.ank-limit b { color:#166534 !important; }
 .ank-list { display:flex; flex-direction:column; gap:8px; }
 .ank-item {
   display:flex; align-items:center; gap:12px;
@@ -934,6 +965,8 @@ body {
 .pr-risk-card small { font-size:11px; color:var(--muted); line-height:1.45; display:block; }
 .pr-scn-sub { font-size:10.5px; color:var(--muted); margin-top:2px; }
 .pr-scn-gain { color:var(--grn); }
+/* строки с открытым лимитом (карты) — гасить нечего, только закрыть договор */
+.pr-scn-limit td { background:var(--v-soft,#FAFAFA); }
 .pr-actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
 .pr-actions .btn { flex:1; min-width:200px; margin-top:0; }
 .pr-actions .pr-act-2 { padding:13px; font-size:14px; }
@@ -1439,7 +1472,7 @@ body {
   </div>
 </div>
 
-<!-- ═════ ПАРСЕР ПКБ/ГКБ (десктоп) ═════ -->
+<!-- ═════ ПАРСЕР ПКБ · ГКБ ═════ -->
 <div id="vParser" class="panel" style="display:none">
   <div class="hero">
     <div class="hero-ico"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></div>
@@ -1475,8 +1508,8 @@ body {
       <div id="parseResult" style="display:none;margin-top:18px"></div>
 
       <p style="font-size:11px;color:var(--muted);margin-top:14px;border-top:1px solid var(--bdr);padding-top:12px">
-        🔒 Файл обрабатывается на сервере и не сохраняется. Для полностью локальной обработки (данные не покидают компьютер) и работы пачками —
-        <a href="#" id="parserDownloadBtn" style="color:var(--v);font-weight:600">десктоп-версия</a>.
+        🔒 Файл обрабатывается на сервере и <b>не сохраняется</b> — после разбора он удаляется.
+        В базу попадают только распознанные данные, сам PDF нигде не остаётся.
       </p>
     </div>
   </div>
@@ -1881,7 +1914,7 @@ function doLogin(silent){
           if(remember) localStorage.setItem(KK, key); else localStorage.removeItem(KK);
         }catch(e){}
         setUI(true,r.clientName);setSubBadge(r.daysLeft);
-        applyParserUrl(r.parserUrl);
+
         el('keyInp').value='';hideMsg('loginMsg');
       } else if(r.expired){
         try{ localStorage.removeItem(KK); }catch(e){}
@@ -2415,7 +2448,7 @@ function doParse(){
     showMsg('parseMsg', navigator.onLine?('Ошибка: '+(e&&e.message||e)):'Нет связи с сервером','err');
   };
   if(window.__parseMock){ window.__parseMock(_parseFiles).then(done, fail); return; }
-  if(!PARSER_API){ btn.disabled=false; btn.textContent='Распознать отчёт'; showMsg('parseMsg','Онлайн-парсер не настроен. Используйте десктоп-версию.','err'); return; }
+  if(!PARSER_API){ btn.disabled=false; btn.textContent='Распознать отчёт'; showMsg('parseMsg','Парсер временно недоступен — попробуйте позже.','err'); return; }
   var fd=new FormData();
   fd.append('token', token||''); fd.append('file', _parseFiles.credit);
   if(_parseFiles.pension) fd.append('pension', _parseFiles.pension);
@@ -2478,9 +2511,21 @@ function renderParse(d){
     + '<div class="pr-kv"><span>ПКР</span><b>'+(d.pkr||'—')+'</b></div>'
     + '</div>';
 
+  // Главная цифра рядом с вердиктом: сколько клиент ещё потянет.
+  // Брокеру нужно за секунду понять статус и запас — остальное уже детали.
+  var vc = prsMain(Number(d.srzp)||0, Number(d.monthly_load)||0);
+  var vLimit = vc
+    ? ('<div class="pr-verdict-num'+(vc.limit > 0 ? '' : ' neg')+'">'
+       + '<span>' + (vc.limit > 0 ? 'Запас на новый платёж' : 'Не хватает') + '</span>'
+       + '<b>' + fmtN(Math.abs(vc.limit)) + ' ₸/мес</b>'
+       + '<i>на семью ' + PRS.members + ' чел. · ограничивает ' + vc.by + '</i></div>')
+    : '<div class="pr-verdict-num none"><span>Запас не посчитан</span>'
+      + '<i>добавьте пенсионную выписку ЕНПФ</i></div>';
+
   h += '<div class="pr-verdict '+verdictClass+'">'
     + '<div class="pr-verdict-ico">'+verdictIco+'</div>'
-    + '<div><div class="pr-verdict-title">'+verdictTitle+'</div><div class="pr-verdict-sub">'+verdictSub+'</div></div>'
+    + '<div class="pr-verdict-txt"><div class="pr-verdict-title">'+verdictTitle+'</div><div class="pr-verdict-sub">'+verdictSub+'</div></div>'
+    + vLimit
     + '</div>';
 
   h += '<div class="pr-stats">'
@@ -2663,6 +2708,9 @@ function _ankStrip(d){
 
 function saveAnketa(d){
   if(!token || !d || d._demo) return;
+  var overdueNow = (d.active||[]).some(function(c){ return (c.current_overdue_days||0) > 0; });
+  var problems = (d.active||[]).filter(function(c){ return (c.current_overdue_days||0) > 0; }).length
+               + (d.completed_recent||[]).length + (d.completed_old||[]).length;
   google.script.run
     .withSuccessHandler(function(r){
       if(r && r.ok) _lastAnketaId = r.id;
@@ -2671,6 +2719,7 @@ function saveAnketa(d){
     .apiSaveAnketa(token, {
       fio: d.fio, iin: d.iin, source: d.source, pkr: d.pkr,
       active: (d.active||[]).length,
+      problems: problems, overdueNow: overdueNow,
       srzp: d.srzp || 0, load: d.monthly_load || 0,
       data: _ankStrip(d)
     });
@@ -2708,12 +2757,23 @@ function renderAnketas(items, q){
     return;
   }
   var rows = items.map(function(a){
-    var problems = '';
-    return '<div class="ank-item">'
+    // Светофор: сразу видно, с каким клиентом можно работать, а где сначала чистить
+    var st, stTxt;
+    if(a.overdueNow){        st = 'bad';  stTxt = 'просрочка сейчас'; }
+    else if(a.problems > 0){ st = 'warn'; stTxt = 'история проблем · ' + a.problems; }
+    else {                   st = 'ok';   stTxt = 'чистая история'; }
+
+    // Свободный запас — главный вопрос брокера: сколько клиент ещё потянет
+    var c = (a.srzp && MORT) ? prsCalc(Number(a.srzp), Number(a.load)||0, PRS.members, prsKOther()) : null;
+    var limitTxt = c ? (c.limit > 0 ? ('+' + fmtN(c.limit)) : 'нет запаса') : '—';
+
+    return '<div class="ank-item ank-'+st+'">'
+      + '<span class="ank-dot" title="'+stTxt+'" aria-hidden="true"></span>'
       + '<div class="ank-main" onclick="openAnketa(\''+a.id+'\')" role="button" tabindex="0" '
       +      'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openAnketa(\''+a.id+'\')}">'
       +   '<div class="ank-fio">'+(a.fio || '—')+'</div>'
-      +   '<div class="ank-meta">'+a.date+' · '+a.bureau
+      +   '<div class="ank-meta"><span class="ank-badge ank-b-'+st+'">'+stTxt+'</span>'
+      +     a.date + ' · ' + a.bureau
       +     (a.iin ? (' · ИИН '+a.iin) : '')
       +     (a.pkr ? (' · ПКР '+a.pkr) : '') + '</div>'
       + '</div>'
@@ -2721,12 +2781,25 @@ function renderAnketas(items, q){
       +   '<div><span>договоров</span><b>'+(a.active||0)+'</b></div>'
       +   '<div><span>СРЗП</span><b>'+(a.srzp ? fmtN(a.srzp) : '—')+'</b></div>'
       +   '<div><span>платежи</span><b>'+(a.load ? fmtN(a.load) : '—')+'</b></div>'
+      +   '<div class="ank-limit"><span>запас</span><b>'+limitTxt+'</b></div>'
       + '</div>'
       + '<button class="ank-del" title="Удалить анкету" aria-label="Удалить анкету '
       +   (a.fio||'')+'" onclick="deleteAnketa(\''+a.id+'\')">✕</button>'
       + '</div>';
   }).join('');
-  box.innerHTML = '<div class="ank-count">Найдено: '+items.length+'</div><div class="ank-list">'+rows+'</div>';
+
+  // Сводка по базе — видно структуру клиентской базы целиком
+  var nOk = items.filter(function(a){ return !a.overdueNow && !(a.problems > 0); }).length;
+  var nWarn = items.filter(function(a){ return !a.overdueNow && a.problems > 0; }).length;
+  var nBad = items.filter(function(a){ return a.overdueNow; }).length;
+  var sum = '<div class="ank-sum">'
+    + '<span class="ank-sum-i ank-b-ok">чистых: <b>'+nOk+'</b></span>'
+    + '<span class="ank-sum-i ank-b-warn">с историей: <b>'+nWarn+'</b></span>'
+    + '<span class="ank-sum-i ank-b-bad">с просрочкой: <b>'+nBad+'</b></span>'
+    + '<span class="ank-count">всего '+items.length+'</span>'
+    + '</div>';
+
+  box.innerHTML = sum + '<div class="ank-list">'+rows+'</div>';
 }
 
 function openAnketa(id){
@@ -3031,22 +3104,34 @@ function renderPayoffScenarios(d, active){
   var _bc = prsMain(income, load);            // состав семьи и коэффициент — из настроек парсера
   var baseLimit = _bc ? _bc.limit : null;
 
+  // Сначала то, что реально гасить: с остатком и с самым крупным платежом
+  payers = payers.slice().sort(function(a,b){
+    var ao = (Number(a.outstanding)||0) > 0 ? 1 : 0, bo = (Number(b.outstanding)||0) > 0 ? 1 : 0;
+    if(ao !== bo) return bo - ao;
+    return (Number(b.periodic_payment)||0) - (Number(a.periodic_payment)||0);
+  });
+
   var rows = payers.map(function(c){
     var pay = Number(c.periodic_payment)||0;
     var out = Number(c.outstanding)||0;
     var months = (pay > 0 && out > 0) ? Math.ceil(out / pay) : null;   // грубая оценка без процентов
     var newLimit = baseLimit !== null ? baseLimit + pay : null;
-    return '<tr>'
+    // Остаток 0, а платёж есть — это открытый лимит (карта). Гасить нечего,
+    // но закрыть договор стоит: банк всё равно считает этот платёж в нагрузку.
+    var zeroOut = out === 0;
+    return '<tr'+(zeroOut ? ' class="pr-scn-limit"' : '')+'>'
       + '<td>'+(c.creditor||'—')+'<div class="pr-scn-sub">'+(c.financing_type||'')+'</div></td>'
-      + '<td>'+fmtN(out)+' ₸</td>'
-      + '<td>'+(months ? ('≈ '+months+' мес.') : '—')+'</td>'
+      + '<td>'+(zeroOut ? '<span class="pr-st">лимит открыт</span>' : (fmtN(out)+' ₸'))+'</td>'
+      + '<td>'+(months ? ('≈ '+months+' мес.') : (zeroOut ? '<span class="pr-st">закрыть договор</span>' : '—'))+'</td>'
       + '<td><b>+'+fmtN(pay)+' ₸/мес</b></td>'
       + '<td>'+(newLimit!==null ? ('<b class="pr-scn-gain">'+fmtN(newLimit)+' ₸</b>') : '<span class="pr-st">нужна пенсионка</span>')+'</td>'
       + '</tr>';
   }).join('');
 
+  var hasLimits = payers.some(function(c){ return (Number(c.outstanding)||0) === 0; });
   var note = baseLimit !== null
     ? 'Столбец «Запас станет» — сколько клиент сможет платить по новому кредиту после закрытия этого договора (сейчас запас '+fmtN(baseLimit)+' ₸/мес).'
+      + (hasLimits ? ' Строки «лимит открыт» — карты и линии без задолженности: гасить нечего, но банк учитывает платёж по ним, пока договор не закрыт.' : '')
     : 'Загрузите пенсионную выписку — тогда посчитаем, как изменится доступный платёж по ипотеке.';
 
   return '<div class="pr-block"><div class="pr-block-title">Что даст досрочное закрытие</div>'
@@ -3225,13 +3310,6 @@ function printBlanks(){
   var f=el('blankFrame');
   if(f&&f.contentWindow&&f.style.display!=='none'){ f.contentWindow.focus(); f.contentWindow.print(); }
   else alert('Подождите, бланки ещё загружаются.');
-}
-
-function applyParserUrl(url){
-  var a=el('parserDownloadBtn');
-  if(!a) return;
-  if(url){ a.href=url; a.removeAttribute('data-disabled'); }
-  else { a.href='#'; a.onclick=function(e){e.preventDefault();alert('Ссылка на скачивание пока не задана. Укажите PARSER_DOWNLOAD_URL в Code.gs.');}; }
 }
 
 // ═══════════════════════════════════════════
@@ -3730,7 +3808,7 @@ function tryAutoLogin(){
   google.script.run
     .withSuccessHandler(function(r){
       if(r&&r.ok){
-        setUI(true,r.clientName);setSubBadge(r.daysLeft);applyParserUrl(r.parserUrl);
+        setUI(true,r.clientName);setSubBadge(r.daysLeft);
       } else if(r&&r.expired){
         showPaywall(r);
       } else {
