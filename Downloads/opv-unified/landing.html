@@ -177,6 +177,13 @@ p { margin: 0; }
   box-shadow: 0 2px 10px color-mix(in srgb, var(--violet) 35%, transparent);
 }
 .nav-cta:hover { transform: translateY(-1px); }
+/* «Войти» — для тех, у кого доступ уже есть; появляется, если задан SERVICE_URL */
+.nav-login {
+  font-size: 13px; font-weight: 700; text-decoration: none;
+  color: var(--violet); padding: 9px 14px; border-radius: 8px;
+  margin-left: auto; margin-right: 10px; transition: background .15s;
+}
+.nav-login:hover { background: color-mix(in srgb, var(--violet) 10%, transparent); }
 
 /* ══════════════════════════════════════════════════════════
    HERO
@@ -697,6 +704,23 @@ function toggleFaq(btn){
   var href = 'https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
   var a1 = document.getElementById('btnWa'); if(a1) a1.href = href;
   var a2 = document.getElementById('btnWa2'); if(a2) a2.href = href;
+
+  // ── Вставьте сюда адрес вашего сервиса (Apps Script, оканчивается на /exec) ──
+  // Тогда в шапке появится кнопка «Войти» для тех, у кого ключ уже есть.
+  // Пока пусто — кнопки нет, лендинг работает как обычно.
+  var SERVICE_URL = '';
+
+  if(SERVICE_URL){
+    var navIn = document.querySelector('.nav-in');
+    var cta = document.querySelector('.nav-cta');
+    if(navIn && cta){
+      var a = document.createElement('a');
+      a.href = SERVICE_URL; a.target = '_blank'; a.rel = 'noopener';
+      a.className = 'nav-login';
+      a.textContent = 'Войти';
+      navIn.insertBefore(a, cta);
+    }
+  }
 })();
 
 </script>
