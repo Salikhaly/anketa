@@ -84,7 +84,22 @@ body {
 }
 .brand-name { font-family:'DM Serif Display',serif; font-size:17px; color:var(--ink); }
 .brand-sub  { font-size:10px; color:var(--muted); font-weight:500; margin-top:-2px; }
-.hdr-r { display:flex; align-items:center; gap:8px; }
+.hdr-r { display:flex; align-items:center; gap:8px; min-width:0; }
+/* На телефоне в шапку не влезают имя, срок подписки и таймер разом —
+   оставляем индикатор сессии и выход, имя видно на дашборде. */
+@media (max-width:560px){
+  .hdr-in { padding:0 12px; gap:8px; }
+  .brand { min-width:0; gap:8px; }
+  .brand-txt { min-width:0; overflow:hidden; }
+  .brand-name { font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .brand-sub { display:none; }        /* подзаголовок съедает всю ширину */
+  .hdr-r { gap:6px; flex-shrink:0; }
+  .hdr-r .sname { display:none; }
+  .hdr-r .sub-badge { display:none; }
+  .hdr-r .btn-help { display:none !important; }
+  .hdr-r .btn-logout { padding:7px 11px; font-size:12px; }
+  .hdr-r .spill { padding:5px 9px; gap:6px; }
+}
 
 .spill {
   display:flex; align-items:center; gap:7px;
@@ -663,16 +678,23 @@ body {
 }
 /* совсем узкие экраны: ужимаем вкладки и убираем «Бланки» в меню «Ещё»,
    чтобы строка помещалась целиком и не требовала горизонтального скролла */
+/* Планшеты и узкие ноутбуки: девять вкладок в строку не помещаются,
+   второстепенные уходят в «Ещё». */
+/* Ниже 1200px девять вкладок в строку не помещаются. В строке остаётся
+   то, чем пользуются каждый день, остальное — одним тапом в «Ещё». */
+@media(max-width:1200px){
+  .ntab { padding:13px 12px; font-size:12.5px; gap:6px; }
+  .nav-tabs { padding:0 12px; }
+  .ntab[data-tab="blank"], .ntab[data-tab="dep"],
+  .ntab[data-tab="buh"],   .ntab[data-tab="sc"] { display:none; }
+}
 @media(max-width:560px){
   .ntab { padding:12px 9px; font-size:11.5px; gap:4px; }
   .ntab .ic { width:16px; height:16px; }
   .nav-tabs { padding:0 8px; }
-  /* на телефоне в строке остаются Главная, Расчёт ОПВ и Ипотека —
-     остальное одним тапом в «Ещё», чтобы строка не требовала скролла */
-  .ntab[data-tab="blank"], .ntab[data-tab="dep"] { display:none; }
 }
 .more-menu .mm-narrow { display:none; }
-@media(max-width:560px){ .more-menu .mm-narrow { display:block; } }
+@media(max-width:1200px){ .more-menu .mm-narrow { display:block; } }
 
 /* ── Дашборд ── */
 .dash-hero { margin-bottom:18px; }
@@ -1055,7 +1077,7 @@ body {
   <div class="hdr-in">
     <div class="brand">
       <div class="brand-mark">📊</div>
-      <div>
+      <div class="brand-txt">
         <div class="brand-name">ОПВ Калькулятор</div>
         <div class="brand-sub">Профессиональный расчёт взносов РК</div>
       </div>
@@ -1084,7 +1106,7 @@ body {
     <button class="ntab ntab-sec" data-tab="buh" onclick="goTab('buh')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V3z"/><path d="M9 8h6M9 12h6"/></svg></span>Бухгалтерия</button>
     <button class="ntab ntab-sec" data-tab="sc" onclick="goTab('sc')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg></span>Сценарии</button>
     <button class="ntab ntab-sec" data-tab="parser" onclick="goTab('parser')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span>Парсер</button>
-    <button class="ntab ntab-sec" data-tab="hist" onclick="goTab('hist')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/><path d="M12 8v4.5l3 1.8"/></svg></span>История<span class="nbadge" id="histBadge"></span></button>
+    <button class="ntab ntab-sec" data-tab="hist" onclick="goTab('hist')"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4h4"/><path d="M12 8v4.5l3 1.8"/></svg></span>База<span class="nbadge" id="histBadge"></span></button>
     <div class="nav-more">
       <button class="ntab nmore-btn" onclick="toggleMore(event)"><span class="ni"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg></span>Ещё</button>
       <div class="more-menu" id="moreMenu">
@@ -1093,7 +1115,7 @@ body {
         <button onclick="goTab('buh')">Бухгалтерия</button>
         <button onclick="goTab('sc')">Сценарии</button>
         <button onclick="goTab('parser')">Парсер ПКБ/ГКБ</button>
-        <button onclick="goTab('hist')">История</button>
+        <button onclick="goTab('hist')">База анкет</button>
       </div>
     </div>
   </div>
@@ -1971,7 +1993,7 @@ function goTab(name){
   p.style.display='block'; p.classList.add('on');
   closeMore();
   try{ window.scrollTo(0,0); }catch(e){}
-  if(name==='hist') loadAnketas();      // журнал грузится по раскрытию, см. ниже
+  if(name==='hist') { initMortgage(); loadAnketas(); }  // конфиг нужен для колонки «запас»
   if(name==='dep')  loadTool('DepositCalc','depFrame','depLoading');
   if(name==='blank')loadTool('DepositBlanks','blankFrame','blankLoading');
   if(name==='mort') initMortgage();
@@ -2041,6 +2063,10 @@ function initMortgage(){
       el('mortLoading').style.display='none';
       el('mortBody').style.display='block';
       mortRecalc();
+      // конфиг мог прийти позже, чем отрисовался список анкет или отчёт —
+      // перерисовываем их, иначе колонка «запас» останется пустой
+      if(_lastAnketas) renderAnketas(_lastAnketas, el('ankQuery') ? el('ankQuery').value : '');
+      if(_lastParse) renderParse(_lastParse);
     })
     .withFailureHandler(function(e){
       _mortLoading = false;
@@ -2678,8 +2704,11 @@ function nextClient(){
 // Пишем разбор в историю — чтобы потом было видно, чьи отчёты проверяли.
 // Демо-режим не логируем: там разбор не настоящий.
 function logParseToHistory(d){
-  // _fromBase — анкету только что открыли из базы, второй раз сохранять не нужно
-  if(!token || !d || d._demo || d._fromBase) return;
+  // _fromBase — анкету открыли из базы; _saved — этот разбор уже сохранён
+  // (renderParse вызывается повторно при смене состава семьи и после
+  //  загрузки конфига, дубли в базе не нужны)
+  if(!token || !d || d._demo || d._fromBase || d._saved) return;
+  d._saved = true;
   var problems = (d.active||[]).filter(function(c){ return (c.current_overdue_days||0) > 0; }).length
                + (d.completed_recent||[]).length + (d.completed_old||[]).length;
   google.script.run
@@ -2699,10 +2728,12 @@ function logParseToHistory(d){
 //  через неделю и не просить PDF заново.
 // ═══════════════════════════════════════════
 
-// Excel в базу не кладём — он тяжёлый; при открытии предлагаем разобрать заново
+// Excel в базу не кладём — он тяжёлый; при открытии предлагаем разобрать заново.
+// Служебные пометки тоже не сохраняем, иначе анкета откроется уже «сохранённой».
+var _ANK_SKIP = { excel_b64:1, _saved:1, _fromBase:1, _demo:1 };
 function _ankStrip(d){
   var o = {};
-  for(var k in d) if(Object.prototype.hasOwnProperty.call(d,k) && k !== 'excel_b64') o[k] = d[k];
+  for(var k in d) if(Object.prototype.hasOwnProperty.call(d,k) && !_ANK_SKIP[k]) o[k] = d[k];
   return o;
 }
 
@@ -2748,8 +2779,11 @@ function loadAnketas(){
     .apiListAnketas(token, q);
 }
 
+var _lastAnketas = null;
+
 function renderAnketas(items, q){
   var box = el('ankContent');
+  _lastAnketas = items;
   if(!items.length){
     box.innerHTML = '<div class="empty"><div class="eico">📁</div><p>'
       + (q ? 'По запросу ничего не найдено' : 'Пока пусто — разберите первый отчёт, он сохранится сюда')
