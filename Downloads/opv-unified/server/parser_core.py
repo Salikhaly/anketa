@@ -75,9 +75,8 @@ def parse_report(credit_pdf: bytes,
             try:
                 pension = parser.parse_pension_pdf_tables(Path(tmp_pension))
                 parser.validate_pension_data(pension, strict=False)
-                amts = [r.amount for r in (pension.get("rows") or [])
-                        if isinstance(r, parser.PensionRow) and r.amount]
-                srzp = parser.calc_pension_avg_vals(amts) if amts else 0
+                # По организациям отдельно и сложить — как в листе «Анкета».
+                srzp = parser.calc_total_srzp(pension.get("rows") or [])
             except Exception:
                 pension = None
 

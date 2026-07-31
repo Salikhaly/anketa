@@ -1190,6 +1190,25 @@ def calc_pension_avg_vals(vals: List[float], coef: float = 7.9) -> int:
     return round((part1 + part2) / 2)
 
 
+def calc_total_srzp(rows: List[PensionRow]) -> int:
+    """
+    Итоговая СРЗП по пенсионной выписке.
+
+    ВАЖНО: считается по каждой организации отдельно и складывается —
+    так же, как в листе «Анкета» Excel. Если прогнать формулу по всем
+    взносам сразу, результат получается другим (заниженным), потому что
+    отсечение минимума и максимума работает по объединённому списку.
+    """
+    if not rows:
+        return 0
+    total = 0
+    for _, org_rows in group_pension_by_org(rows).items():
+        vals = [float(r.amount) for r in org_rows if isinstance(r, PensionRow) and r.amount]
+        if vals:
+            total += calc_pension_avg_vals(vals)
+    return total
+
+
 def group_pension_by_org(rows: List[PensionRow]) -> Dict[str, List[PensionRow]]:
     """Группировка по BIN (sender_bin) — один БИН = одна организация.
     Если БИН отсутствует — fallback на название."""

@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from main import (
     extract_credit_report, extract_any_credit_report, parse_pension_pdf_tables,
     write_output_legacy_excel, fill_anketa_from_pension,
-    calc_pension_avg_vals, validate_credit_data,
+    calc_pension_avg_vals, calc_total_srzp, validate_credit_data,
     validate_pension_data, mask_iin,
     group_pension_by_org, PensionRow,
 )
@@ -136,8 +136,8 @@ def save_settings(s):
         LOGGER.warning("Настройки: %s", e)
 
 def calc_pension_avg(rows):
-    amounts = [r.amount for r in rows if isinstance(r, PensionRow) and r.amount]
-    return {"avg_salary": calc_pension_avg_vals(amounts) if amounts else 0}
+    # По каждой организации отдельно и сложить — совпадает с листом «Анкета».
+    return {"avg_salary": calc_total_srzp(rows)}
 
 def safe_fn(t):
     if not t: return "UNKNOWN"
