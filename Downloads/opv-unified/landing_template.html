@@ -396,8 +396,8 @@ footer { padding: 40px 0 60px; border-top: 1px solid var(--line-soft); margin-to
     <h1>Отчёт ПКБ или ГКБ — в готовую анкету, <em>пока клиент ждёт</em></h1>
     <p class="hero-sub">
       Загружаете кредитный отчёт клиента — получаете разобранные договоры, суммы, просрочки
-      и цепочки цессий, плюс готовую Excel-анкету для банка. Внутри той же подписки — калькулятор
-      ОПВ, расчёт вознаграждения по депозитам и бланки переуступки для Отбасы Банка.
+      и цепочки цессий, плюс готовую Excel-анкету для банка. Внутри той же подписки — ипотечный
+      калькулятор по госпрограммам, расчёт ОПВ, вознаграждение по депозитам и бланки переуступки.
     </p>
     <div class="hero-actions">
       <a class="btn btn-primary" href="#pricing">Оформить доступ — 25 000 ₸/мес</a>
@@ -457,7 +457,7 @@ footer { padding: 40px 0 60px; border-top: 1px solid var(--line-soft); margin-to
   <section id="features">
     <div class="sec-head reveal">
       <span class="sec-eyebrow">Что внутри подписки</span>
-      <h2>Четыре инструмента, которыми вы пользуетесь каждый день — под одним ключом доступа</h2>
+      <h2>Пять инструментов, которыми вы пользуетесь каждый день — под одним ключом доступа</h2>
       <p>Не отдельные покупки и не поиск шаблонов по чатам — один вход, один список инструментов.</p>
     </div>
 
@@ -471,10 +471,18 @@ footer { padding: 40px 0 60px; border-top: 1px solid var(--line-soft); margin-to
         <div class="ledger-meta">40 сек · оба бюро</div>
       </div>
       <div class="ledger-row">
+        <div class="ledger-ico"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div>
+        <div class="ledger-main">
+          <h3>Ипотечный калькулятор</h3>
+          <p>Максимальная сумма по доходу семьи, платёж и нужная зарплата по цене жилья, сравнение шести госпрограмм — по методике банка, с прожиточным минимумом и долговой нагрузкой.</p>
+        </div>
+        <div class="ledger-meta">6 госпрограмм</div>
+      </div>
+      <div class="ledger-row">
         <div class="ledger-ico"><svg viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
         <div class="ledger-main">
           <h3>Расчёт ОПВ</h3>
-          <p>Средняя зарплата по формуле ЕНПФ из взносов за 12 месяцев. Показывает, сколько довнести, чтобы выйти на нужную сумму за 1–6 месяцев.</p>
+          <p>Средняя зарплата по формуле ЕНПФ из пенсионных взносов. Показывает, сколько довнести, чтобы выйти на нужную сумму за 1–6 месяцев.</p>
         </div>
         <div class="ledger-meta">формула ЕНПФ</div>
       </div>
@@ -560,6 +568,7 @@ footer { padding: 40px 0 60px; border-top: 1px solid var(--line-soft); margin-to
         <div class="receipt-per">без автосписания — оплата вручную</div>
         <div class="receipt-list">
           <div class="receipt-item"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Парсер ПКБ и ГКБ, без ограничения по числу отчётов</div>
+          <div class="receipt-item"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Ипотечный калькулятор по шести госпрограммам</div>
           <div class="receipt-item"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Калькуляторы ОПВ и депозитов</div>
           <div class="receipt-item"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Готовые бланки переуступки</div>
           <div class="receipt-item"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Десктоп-версия парсера в комплекте</div>
@@ -593,8 +602,8 @@ footer { padding: 40px 0 60px; border-top: 1px solid var(--line-soft); margin-to
         <div class="faq-a"><p>Доступ мягко блокируется до оплаты — данные и настройки сохраняются, ничего не удаляется.</p></div>
       </div>
       <div class="faq-item" data-open="false">
-        <button class="faq-q" onclick="toggleFaq(this)">Отчёты ИПОТЕКИ и Одобрения банка тоже входят?<span class="plus">+</span></button>
-        <div class="faq-a"><p>Да — расчёт по банковским программам и максимальному одобрению доступен в том же сервисе после входа.</p></div>
+        <button class="faq-q" onclick="toggleFaq(this)">Откуда берутся ставки по госпрограммам?<span class="plus">+</span></button>
+        <div class="faq-a"><p>Из таблицы, которую вы ведёте сами: поменяли ставку или МРП — расчёт сразу считает по-новому, ничего переустанавливать не нужно.</p></div>
       </div>
     </div>
   </section>
