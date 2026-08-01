@@ -438,7 +438,7 @@ function apiGetHistory(token){
     if(!sh) return {ok:true,rows:[]};
     var data=sh.getDataRange().getValues(),rows=[];
     for(var i=data.length-1; i>=1 && rows.length<30; i--){
-      if(String(data[i][2]).trim()===s.key && String(data[i][3]).trim()!=='LOGIN'){
+      if(_normKey_(data[i][2])===_normKey_(s.key) && String(data[i][3]).trim()!=='LOGIN'){
         rows.push({
           date: Utilities.formatDate(new Date(data[i][0]),'Asia/Almaty','dd.MM.yyyy HH:mm'),
           mode: String(data[i][3]||''),
@@ -924,7 +924,7 @@ function _trimAnketas_(sh, key){
   var keys = sh.getRange(2, 4, last - 1, 1).getValues();
   var mine = [];
   for (var i = 0; i < keys.length; i++) {
-    if (String(keys[i][0]) === String(key)) mine.push(i + 2);   // номера строк
+    if (_normKey_(keys[i][0]) === _normKey_(key)) mine.push(i + 2);   // номера строк
   }
   var extra = mine.length - ANKETA_LIMIT;
   for (var j = extra - 1; j >= 0; j--) sh.deleteRow(mine[j]);   // снизу вверх
@@ -942,7 +942,7 @@ function apiListAnketas(token, query){
   var out = [];
   for (var i = data.length - 1; i >= 0; i--) {      // свежие сверху
     var r = data[i];
-    if (String(r[3]) !== String(s.key)) continue;   // чужие анкеты не показываем
+    if (_normKey_(r[3]) !== _normKey_(s.key)) continue;   // чужие анкеты не показываем
     if (q) {
       var hay = (String(r[4]) + ' ' + String(r[5])).toLowerCase();
       if (hay.indexOf(q) === -1) continue;
@@ -966,7 +966,7 @@ function apiGetAnketa(token, id){
   var data = sh.getRange(2, 1, last - 1, 14).getValues();
   for (var i = 0; i < data.length; i++) {
     if (String(data[i][0]) !== String(id)) continue;
-    if (String(data[i][3]) !== String(s.key)) return { ok:false, message:'Нет доступа к этой анкете' };
+    if (_normKey_(data[i][3]) !== _normKey_(s.key)) return { ok:false, message:'Нет доступа к этой анкете' };
     try {
       return { ok:true, data: JSON.parse(data[i][13]), date: data[i][1] };
     } catch (e) {
@@ -985,7 +985,7 @@ function apiDeleteAnketa(token, id){
   var data = sh.getRange(2, 1, last - 1, 4).getValues();
   for (var i = 0; i < data.length; i++) {
     if (String(data[i][0]) !== String(id)) continue;
-    if (String(data[i][3]) !== String(s.key)) return { ok:false, message:'Нет доступа к этой анкете' };
+    if (_normKey_(data[i][3]) !== _normKey_(s.key)) return { ok:false, message:'Нет доступа к этой анкете' };
     sh.deleteRow(i + 2);
     return { ok:true };
   }
