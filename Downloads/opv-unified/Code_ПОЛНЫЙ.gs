@@ -222,13 +222,24 @@ function getClients(){
 }
 
 // Полная строка клиента: имя, активность, устройство, срок подписки
+// Приводим ключ к виду, по которому сравниваем: без регистра, пробелов и дефисов.
+// Клиент может набрать «sake», «SAKE» или «xq7pqcet» вместо «XQ7P-QCET» —
+// всё это должно пускать, лишь бы ключ был тот самый.
+function _normKey_(k) {
+  return String(k || '').trim().toLowerCase().replace(/[\s-]+/g, '');
+}
+
+// Возвращаем канонический ключ из таблицы — по нему потом фильтруем анкеты.
 function _clientRow_(key) {
+  var want = _normKey_(key);
+  if (!want) return null;
   var data = _getClientsSheet_().getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
     if (!data[i]) continue;
-    if (String(data[i][COL.KEY]).trim() === key) {
+    if (_normKey_(data[i][COL.KEY]) === want) {
       return {
         row:    i + 1,
+        key:    String(data[i][COL.KEY]).trim(),   // как записано в таблице
         name:   String(data[i][COL.NAME] || '').trim(),
         active: String(data[i][COL.ACTIVE] || '').trim().toLowerCase() === 'да',
         device: String(data[i][COL.DEVICE] || '').trim() || null,
@@ -249,10 +260,11 @@ function _getDevice_(key){
 }
 
 function _setDevice_(key,deviceId){
+  var want = _normKey_(key);
   var sh=_getClientsSheet_(),data=sh.getDataRange().getValues();
   for(var i=1; i < data.length; i++){
     if (!data[i]) continue;
-    if(String(data[i][COL.KEY]).trim()===key){
+    if(_normKey_(data[i][COL.KEY])===want){
       sh.getRange(i+1,COL.DEVICE+1).setValue(deviceId);
       sh.getRange(i+1,COL.DATE+1).setValue(new Date());
       return;
@@ -354,6 +366,10 @@ function apiLogin(key, deviceId){
   var days = _subDaysLeft_(c.until);
   if (days !== null && days < 0)
     return _payInfo_(key, c.name, 'Срок подписки истёк ' + _fmtDate_(c.until) + '.');
+
+  // Дальше работаем с ключом в том виде, как он записан в таблице:
+  // иначе при входе «SAKE» вместо «Sake» анкеты брокера не найдутся.
+  key = c.key || key;
 
   if (!c.device) _setDevice_(key, deviceId);
   var token = _newToken_();

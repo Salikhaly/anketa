@@ -1969,11 +1969,10 @@ el('keyInp').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()
 // Клиент может вставить ключ как угодно — «abcd 1234», «ABCD1234», с пробелами.
 // Приводим к виду ABCD-1234 прямо во время ввода.
 el('keyInp').addEventListener('input',function(){
-  // убираем пробелы и приводим к верхнему регистру — вставка из WhatsApp часто с мусором
-  var raw = this.value.toUpperCase().replace(/\s+/g,'');
-  var clean = raw.replace(/-/g,'');
-  // наши ключи — 8 латинских символов, ставим дефис сами; чужие форматы не трогаем
-  var out = /^[A-Z0-9]{5,8}$/.test(clean) ? clean.slice(0,4)+'-'+clean.slice(4) : raw;
+  // Только убираем пробелы — вставка из WhatsApp часто с ними.
+  // Регистр и дефисы не трогаем: ключи бывают любые («Sake», «Erlan»),
+  // а сервер всё равно сравнивает без учёта регистра и дефисов.
+  var out = this.value.replace(/\s+/g,'');
   if(out !== this.value){
     var atEnd = this.selectionStart === this.value.length;
     this.value = out;
