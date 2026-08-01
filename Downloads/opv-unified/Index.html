@@ -2978,7 +2978,7 @@ function printClientReport(){
       + hlVal
       + '<div class="cr-hl-note">Расчёт на семью ' + famTxt + '. Берётся меньшее из двух ограничений: '
       + '<b>КД</b> — ' + Math.round(kd*100) + '% от дохода за вычетом текущих платежей; '
-      + '<b>ЧСД</b> — доход минус прожиточный минимум и резерв. '
+      + '<b>ЧСД</b> — доход за вычетом резерва, прожиточного минимума и текущих платежей. '
       + 'Окончательная сумма зависит от программы и требований банка.</div></div>';
   }
 
@@ -3197,13 +3197,14 @@ function prsCalc(income, load, members, kPm){
   var pm  = MORT.mrp * kPm * m;
   var kd  = mortKd(income);
   var res = (MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10);
-  var byKd  = Math.round(income * kd - load);                    // ограничение по КД
-  var chsd  = Math.round(income - income * res - pm);            // чистый совокупный доход
-  var byChsd = chsd - load;                                      // ограничение по ЧСД
-  return { pm:pm, kd:kd, members:m, k:kPm, chsd:chsd,
-           byKd:byKd, byChsd:byChsd,
-           limit: Math.min(byKd, byChsd),
-           by: byKd <= byChsd ? 'КД' : 'ЧСД' };
+  var byKd = Math.round(income * kd - load);                     // ограничение по КД
+  // ЧСД — чистый совокупный доход: из зарплаты вычитаем резерв,
+  // прожиточный минимум на всю семью и платежи по текущим кредитам.
+  var chsd = Math.round(income - income * res - pm - load);
+  return { pm:pm, kd:kd, members:m, k:kPm, chsd:chsd, reserve:Math.round(income * res),
+           byKd:byKd, byChsd:chsd,
+           limit: Math.min(byKd, chsd),
+           by: byKd <= chsd ? 'КД' : 'ЧСД' };
 }
 
 // Основной вариант — тот, что уходит в PDF и сценарии закрытия.
@@ -3243,8 +3244,9 @@ function prsVariantRow(c, title, hint){
   return '<div class="prs-var'+(ok?'':' bad')+'">'
     + '<div class="prs-var-h"><b>'+title+'</b><span>'+hint+'</span></div>'
     + '<div class="prs-var-v">'+(ok ? (fmtN(c.limit)+' ₸/мес') : ('не хватает '+fmtN(Math.abs(c.limit))+' ₸/мес'))+'</div>'
-    + '<div class="prs-var-d">ПМ '+fmtN(c.pm)+' ₸ · ЧСД '+fmtN(c.chsd)+' ₸ · КД '+Math.round(c.kd*100)+'%'
-    +   ' · ограничивает <b>'+c.by+'</b></div>'
+    + '<div class="prs-var-d">по ЧСД '+fmtN(c.chsd)+' ₸ · по КД '+fmtN(c.byKd)+' ₸'
+    +   ' → ограничивает <b>'+c.by+'</b></div>'
+    + '<div class="prs-var-d">ПМ '+fmtN(c.pm)+' ₸ ('+c.members+' чел. × '+c.k+') · КД '+Math.round(c.kd*100)+'%</div>'
     + '</div>';
 }
 
@@ -3263,39 +3265,48 @@ function renderIncomeAnalysis(d){
       + '</div>';
   }
 
-  var free = income - load;                       // остаётся после текущих платежей
-  var rows = ''
-    + '<div class="pr-inc-row"><span>Средняя зарплата (СРЗП)</span><b>'+fmtN(income)+' ₸</b></div>'
-    + '<div class="pr-inc-row"><span>− текущие платежи по кредитам</span><b>'+fmtN(load)+' ₸</b></div>'
-    + '<div class="pr-inc-row total"><span>= свободный доход</span><b'+(free<0?' class="pr-bad"':'')+'>'+fmtN(free)+' ₸</b></div>';
+  var rows = '', verdict = '', note = '', cfg = '';
 
   // Лимит банка считаем, только если конфиг (МРП, КД, ПМ) уже пришёл с сервера
-  var verdict = '', note = '', cfg = '';
   if(MORT){
     cfg = prsPanel();
     var cOther  = prsCalc(income, load, PRS.members, prsKOther());
     var cNauryz = prsCalc(income, load, PRS.members, prsKNauryz());
     var kd = cOther.kd;
+    var resPct = Math.round((MORT.incomeReservePct!=null ? MORT.incomeReservePct : 0.10) * 100);
     var mem = PRS.members > 1 ? (PRS.members + ' чел.') : '1 чел.';
+    var both = (PRS.mode === 'both');
+    var c = both ? cOther : ((PRS.mode === 'nauryz') ? cNauryz : cOther);
 
-    if(PRS.mode === 'both'){
-      rows += '<div class="pr-inc-row dim"><span>− прожиточный минимум ('+mem+')</span>'
-            + '<b>'+fmtN(cOther.pm)+' ₸ / '+fmtN(cNauryz.pm)+' ₸</b></div>';
+    // Раскладка ЧСД сверху вниз: из чего он получается.
+    // Строки с ПМ и итогом пересчитываются при смене состава семьи.
+    rows = ''
+      + '<div class="pr-inc-row"><span>Средняя зарплата (СРЗП)</span><b>'+fmtN(income)+' ₸</b></div>'
+      + '<div class="pr-inc-row dim"><span>− резерв '+resPct+'%</span><b>'+fmtN(c.reserve)+' ₸</b></div>'
+      + '<div class="pr-inc-row dim"><span>− прожиточный минимум ('+mem
+      +   (both ? (', ×'+prsKOther()+' / ×'+prsKNauryz()) : (', ×'+c.k)) + ')</span><b>'
+      +   (both ? (fmtN(cOther.pm)+' ₸ / '+fmtN(cNauryz.pm)+' ₸') : (fmtN(c.pm)+' ₸')) + '</b></div>'
+      + '<div class="pr-inc-row dim"><span>− текущие платежи по кредитам</span><b>'+fmtN(load)+' ₸</b></div>'
+      + '<div class="pr-inc-row total"><span>= ЧСД (чистый совокупный доход)</span><b'
+      +   ((both ? cOther.chsd : c.chsd) < 0 ? ' class="pr-bad"' : '') + '>'
+      +   (both ? (fmtN(cOther.chsd)+' ₸ / '+fmtN(cNauryz.chsd)+' ₸') : (fmtN(c.chsd)+' ₸')) + '</b></div>';
+
+    if(both){
       verdict = '<div class="prs-vars">'
         + prsVariantRow(cOther,  'Обычные программы', 'ПМ × '+prsKOther())
         + prsVariantRow(cNauryz, 'Наурыз',            'ПМ × '+prsKNauryz())
         + '</div>';
     } else {
-      var c = (PRS.mode === 'nauryz') ? cNauryz : cOther;
-      rows += '<div class="pr-inc-row dim"><span>− прожиточный минимум ('+mem+', ×'+c.k+')</span><b>'+fmtN(c.pm)+' ₸</b></div>';
       verdict = '<div class="prs-vars">'
         + prsVariantRow(c, PRS.mode === 'nauryz' ? 'Наурыз' : 'Обычные программы', 'ПМ × '+c.k)
         + '</div>';
     }
-    note = 'Считается по двум ограничениям, берётся меньшее: <b>КД</b> — '+Math.round(kd*100)+'% от дохода минус текущие платежи; '
-         + '<b>ЧСД</b> — доход минус резерв '+Math.round((MORT.incomeReservePct!=null?MORT.incomeReservePct:0.10)*100)+'%, '
-         + 'минус прожиточный минимум (МРП '+fmtN(MORT.mrp)+' × коэффициент × '+PRS.members+'), минус текущие платежи.';
+    note = 'Берётся меньшее из двух ограничений: <b>КД</b> — '+Math.round(kd*100)+'% от зарплаты минус текущие платежи '
+         + '('+fmtN(cOther.byKd)+' ₸); <b>ЧСД</b> — то, что осталось после резерва, прожиточного минимума '
+         + '(МРП '+fmtN(MORT.mrp)+' × коэффициент × '+PRS.members+') и текущих платежей.';
   } else {
+    rows = '<div class="pr-inc-row"><span>Средняя зарплата (СРЗП)</span><b>'+fmtN(income)+' ₸</b></div>'
+         + '<div class="pr-inc-row dim"><span>− текущие платежи по кредитам</span><b>'+fmtN(load)+' ₸</b></div>';
     note = 'Лимит по методике банка появится после загрузки ставок — откройте вкладку «Ипотека».';
   }
 
