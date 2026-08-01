@@ -302,16 +302,14 @@ function _payInfo_(key, name, msg) {
 function doGet(e){
   var t = HtmlService.createTemplateFromFile('Index');
   t.autoKey = (e && e.parameter && e.parameter.key) ? String(e.parameter.key).trim() : '';
+  // Apps Script разрешает только четыре мета-тега: viewport,
+  // mobile-web-app-capable, apple-mobile-web-app-capable и
+  // google-site-verification. Любой другой роняет всю страницу.
   return t.evaluate()
     .setTitle('Единый сервис')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-    // Ярлык на телефоне: цвет строки состояния и запуск без адресной строки.
-    // Полноценный PWA на Apps Script недоступен — страница живёт в iframe Google,
-    // но ярлык «На главный экран» открывает сервис в один тап.
-    .addMetaTag('theme-color', '#3B0764')
+    .addMetaTag('mobile-web-app-capable', 'yes')
     .addMetaTag('apple-mobile-web-app-capable', 'yes')
-    .addMetaTag('apple-mobile-web-app-status-bar-style', 'black-translucent')
-    .addMetaTag('apple-mobile-web-app-title', 'Сервис')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
