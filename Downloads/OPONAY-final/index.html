@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OPONAY — обучение менеджера</title>
+<style>
+:root{--bg:#f4f6f8;--panel:#fff;--text:#17212b;--muted:#6b7280;--line:#e5e7eb;--accent:#111827;--green:#16855b;--orange:#d97706;--blue:#2563eb}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.top{height:68px;background:#111827;color:#fff;display:flex;align-items:center;padding:0 22px;gap:18px;position:sticky;top:0;z-index:50;box-shadow:0 2px 14px #0002}
+.logo{font-weight:800;font-size:20px;letter-spacing:.3px}.sub{color:#9ca3af;font-size:13px}
+.nav{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap}.nav button{border:1px solid #ffffff20;background:#ffffff0d;color:#fff;border-radius:10px;padding:9px 12px;cursor:pointer;font-weight:700}.nav button.active{background:#fff;color:#111827}
+.page{display:none}.page.active{display:block}
+.old-wrap{height:calc(100vh - 68px);min-height:700px}.old-wrap iframe{width:100%;height:100%;border:0;background:#fff}
+.training{max-width:1250px;margin:0 auto;padding:26px}
+.hero{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 5px 25px #00000008}
+.hero h1{margin:0 0 8px;font-size:30px}.hero p{margin:0;color:var(--muted);line-height:1.5}
+.path{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:18px 0}
+.step{border:1px solid var(--line);background:#fff;border-radius:14px;padding:13px;cursor:pointer;text-align:left}.step b{display:block;font-size:13px}.step span{display:block;color:var(--muted);font-size:12px;margin-top:5px}.step.current{border-color:#111827;box-shadow:0 0 0 2px #11182710}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-top:18px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px}.card h2{margin:0 0 14px;font-size:20px}.hint{color:var(--muted);font-size:13px}
+.spv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.spv div{border:1px solid var(--line);border-radius:12px;padding:14px}.spv strong{display:block;margin-bottom:6px}.benefit{border-color:#a7e2c9!important;background:#f2fbf7}
+.lesson{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:15px}.lesson h3{margin:0 0 7px;font-size:16px}.lesson p{margin:0;line-height:1.5}
+button.action{background:#111827;color:white;border:0;border-radius:10px;padding:11px 14px;cursor:pointer;font-weight:700}.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.quiz{display:none}.quiz.active{display:block}.q{font-weight:800;margin:14px 0 9px}.answers{display:grid;gap:8px}.answers button{background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px;text-align:left;cursor:pointer}.answers button:hover{border-color:#111827}.result{margin-top:12px;font-weight:700}
+iframe.training-frame{width:100%;height:calc(100vh - 110px);border:0;background:white;border-radius:16px}
+@media(max-width:900px){.path{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:1fr}.spv{grid-template-columns:1fr}.top{height:auto;min-height:68px;flex-wrap:wrap;padding:12px}.nav{margin-left:0}.old-wrap{height:calc(100vh - 110px)}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">OPONAY</div>
+  <div class="sub">Скрипт продаж · обучение менеджера</div>
+  <nav class="nav">
+    <button class="active" data-page="call">📞 Старый звонок</button>
+    <button data-page="course">🎓 Полный курс</button>
+    <button data-page="learn">🎓 Учение</button>
+    <button data-page="spv">🧩 СПВ</button>
+    <button data-page="meeting">🤝 Встреча</button>
+    <button data-page="objections">🛡 Возражения</button>
+  </nav>
+</header>
+
+<section id="call" class="page active">
+  <div class="old-wrap"><iframe src="1.0.html" title="Оригинальный скрипт OPONAY"></iframe></div>
+</section>
+
+<section id="course" class="page"><div class="old-wrap"><iframe src="course.html" title="Полный курс обучения OPONAY"></iframe></div></section>
+
+<section id="learn" class="page">
+<div class="training">
+  <div class="hero">
+    <h1>🎓 Учение менеджера</h1>
+    <p>Не просто читать скрипт. Сначала понять логику → затем выучить формулировки → затем пройти тренировку. Старый рабочий звонок при этом остаётся отдельным модулем.</p>
+  </div>
+  <div class="path">
+    <button class="step current" onclick="lesson(0)"><b>1. Логика</b><span>Как вести разговор</span></button>
+    <button class="step" onclick="lesson(1)"><b>2. Боль</b><span>Что ищем у клиента</span></button>
+    <button class="step" onclick="lesson(2)"><b>3. СПВ</b><span>Как презентовать</span></button>
+    <button class="step" onclick="lesson(3)"><b>4. Ценность</b><span>Закончить выгодой</span></button>
+    <button class="step" onclick="lesson(4)"><b>5. Встреча</b><span>Провести диагностику</span></button>
+    <button class="step" onclick="lesson(5)"><b>6. Контроль</b><span>Проверить знания</span></button>
+  </div>
+  <div id="lesson0" class="lesson"><h3>1. Главная логика</h3><p><b>Не продаём всё подряд.</b> Сначала понимаем ситуацию клиента, находим реальную боль, подтверждаем её, затем показываем только нужное решение. В телефонном звонке главная цель — договориться о встрече.</p></div>
+  <div id="lesson1" class="lesson" style="display:none"><h3>2. Боль клиента</h3><p>Ищем, где собственник теряет <b>деньги, время, контроль, продажи или товар</b>. После ответа клиента не перескакиваем сразу к функции: уточняем проблему и последствия.</p></div>
+  <div id="lesson2" class="lesson" style="display:none"><h3>3. СПВ</h3><div class="spv"><div><strong>Свойство</strong>Что умеет программа.</div><div><strong>Преимущество</strong>Что меняется в работе клиента.</div><div class="benefit"><strong>Выгода</strong>Что клиент получает в деньгах, времени, контроле или продажах.</div></div></div>
+  <div id="lesson3" class="lesson" style="display:none"><h3>4. Ключевая ценность</h3><p>После нескольких СПВ собираем всё в один результат: <b>меньше потерь + больше контроля + экономия времени + возможность роста</b>. Только после этого переход к комплекту и цене.</p></div>
+  <div id="lesson4" class="lesson" style="display:none"><h3>5. Встреча</h3><p>Приветствие → короткий план → 2–5 вопросов → боль и последствия → подтверждение → только нужные функции через СПВ → ключевая ценность → цена/сотрудничество. <b>Возражения здесь не смешиваем:</b> они отдельным блоком.</p></div>
+  <div id="lesson5" class="lesson" style="display:none"><h3>6. Контроль знаний</h3><div class="quiz active" id="q1"><div class="q">Что должно быть в конце презентации свойства?</div><div class="answers"><button onclick="answer(false)">Ещё список функций</button><button onclick="answer(true)">Конкретная выгода для клиента</button><button onclick="answer(false)">Сразу цена</button></div></div><div class="quiz" id="q2"><div class="q">Что делаем после того, как клиент назвал боль?</div><div class="answers"><button onclick="answer(false)">Сразу рассказываем весь функционал</button><button onclick="answer(true)">Уточняем проблему и последствия, подтверждаем потребность</button><button onclick="answer(false)">Сразу даём скидку</button></div></div><div class="quiz" id="q3"><div class="q">Где находятся возражения?</div><div class="answers"><button onclick="answer(true)">В отдельном блоке, учим отдельно</button><button onclick="answer(false)">Внутри каждого этапа встречи</button><button onclick="answer(false)">Их не нужно учить</button></div></div><div id="quizResult" class="result"></div></div>
+</div>
+</section>
+
+<section id="spv" class="page"><div class="training"><div class="hero"><h1>🧩 СПВ — отдельный модуль</h1><p>Здесь менеджер учится не перечислять функции, а связывать каждую функцию с конкретной болью и измеримой выгодой.</p></div><div style="margin-top:18px"><iframe class="training-frame" src="spv-source.html" title="СПВ и обучение"></iframe></div></div></section>
+
+<section id="meeting" class="page"><div class="training"><div class="hero"><h1>🤝 Встреча</h1><p><b>Возражения не смешиваем со встречей.</b> Встреча ведётся по диагностической логике.</p></div><div class="grid"><div class="card"><h2>Маршрут встречи</h2><div class="lesson"><h3>1. Приветствие</h3><p>Знакомство → ТМР → озвучить план встречи.</p></div><div class="lesson"><h3>2. Диагностика</h3><p>2–5 вопросов по бизнесу без допроса.</p></div><div class="lesson"><h3>3. Боль</h3><p>Найти конкретную проблему и последствия.</p></div><div class="lesson"><h3>4. СПВ</h3><p>Показываем только функции, которые закрывают найденную боль.</p></div><div class="lesson"><h3>5. Ценность</h3><p>Собираем результат: меньше потерь, больше контроля, экономия времени, рост.</p></div><div class="lesson"><h3>6. Цена</h3><p>Переходим к цене после того, как клиент понял ценность.</p></div></div><div class="card"><h2>Правило менеджера</h2><p class="hint">Если клиент сказал: «У меня проблема с кассой» — не отвечаем списком из 20 функций.</p><div class="spv"><div><strong>Свойство</strong>Внесения и снятия денег фиксируются.</div><div><strong>Преимущество</strong>Видно движение денег и остаток кассы.</div><div class="benefit"><strong>Выгода</strong>Легче заметить расхождения, снизить риск кассовых разрывов и контролировать деньги.</div></div></div></div></div></section>
+
+<section id="objections" class="page"><div class="training"><div class="hero"><h1>🛡 Возражения</h1><p>Отдельный блок. Их учим отдельно и наизусть. Старые формулировки из рабочего скрипта не удалены.</p><div class="actions"><button class="action" onclick="document.querySelector('[data-page=call]').click()">Открыть старый скрипт → Возражения</button></div></div></div></section>
+
+<script>
+const buttons=[...document.querySelectorAll('.nav button')];
+buttons.forEach(b=>b.onclick=()=>{buttons.forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(b.dataset.page).classList.add('active');});
+function lesson(n){for(let i=0;i<6;i++){const e=document.getElementById('lesson'+i);if(e)e.style.display=i===n?'block':'none';}document.querySelectorAll('.step').forEach((e,i)=>e.classList.toggle('current',i===n));}
+let qi=1,score=0;
+function answer(ok){if(ok)score++;document.getElementById('quizResult').textContent='Правильных ответов: '+score;const cur=document.getElementById('q'+qi);if(cur)cur.style.display='none';qi++;const next=document.getElementById('q'+qi);if(next)next.style.display='block';else document.getElementById('quizResult').textContent='Готово. Результат: '+score+'/3';}
+</script>
+</body>
+</html>
