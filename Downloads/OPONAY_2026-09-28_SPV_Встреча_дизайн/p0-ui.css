@@ -1,0 +1,36 @@
+
+/* OPONAY P0 implementation layer — Excel content integrated into the workflow */
+.p0{margin:28px 0 42px;background:#fff;border:1px solid #DDE5F0;border-radius:18px;box-shadow:0 10px 35px rgba(31,58,110,.08);overflow:hidden}
+.p0-head{padding:24px 26px;background:linear-gradient(180deg,#F7F9FC,#fff);border-bottom:1px solid #E5EAF1}
+.p0-kicker{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#2E5AAC}
+.p0-head h2{margin:7px 0 7px;color:#1F3A6E;font-size:28px}
+.p0-head p{margin:0;color:#5A6472;line-height:1.55}
+.p0-tabs{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid #E5EAF1;overflow:auto;background:#fff}
+.p0-tabs button{border:1px solid #DDE5F0;background:#fff;color:#5A6472;padding:9px 12px;border-radius:9px;font-weight:800;white-space:nowrap;cursor:pointer}
+.p0-tabs button.active{background:#1F3A6E;color:#fff;border-color:#1F3A6E}
+.p0-body{padding:20px}
+.p0-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.p0-search{flex:1;min-width:220px;border:1px solid #DDE5F0;background:#F5F7FA;border-radius:10px;padding:11px 13px;font:inherit;outline:none}
+.p0-search:focus{border-color:#2E5AAC;box-shadow:0 0 0 3px rgba(46,90,172,.1)}
+.p0-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.p0-card{border:1px solid #E1E7EF;border-radius:14px;background:#fff;overflow:hidden}
+.p0-card summary{padding:15px 16px;cursor:pointer;font-weight:800;color:#1A1A1A;list-style:none}
+.p0-card summary::-webkit-details-marker{display:none}
+.p0-card summary:after{content:"+";float:right;color:#2E5AAC;font-size:20px}
+.p0-card[open] summary:after{content:"−"}
+.p0-card-body{padding:0 16px 16px;border-top:1px solid #E8EDF3}
+.p0-field{padding-top:13px}.p0-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6B7480;font-weight:800;margin-bottom:5px}
+.p0-text{font-size:14px;line-height:1.6;color:#1A1A1A;white-space:pre-line}
+.p0-four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:12px}
+.p0-four>div{background:#F5F7FA;border-radius:10px;padding:11px}
+.p0-four b{display:block;font-size:11px;color:#1F3A6E;margin-bottom:5px}
+.p0-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;background:#EEF3FA;color:#1F3A6E;font-size:11px;font-weight:800;margin:0 5px 5px 0}
+.p0-empty{padding:22px;border:1px dashed #CCD6E4;border-radius:12px;color:#5A6472;text-align:center}
+.p0-flow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:18px}
+.p0-flow div{padding:12px;background:#F5F7FA;border-radius:10px;border-top:3px solid #1F3A6E}
+.p0-flow b{display:block;color:#1F3A6E;font-size:12px}.p0-flow span{font-size:12px;color:#5A6472}
+.p0-alert{padding:14px 16px;border-left:4px solid #2E5AAC;background:#F5F7FA;border-radius:10px;margin-bottom:16px;color:#1A1A1A;line-height:1.55}
+.p0-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.p0-kpi div{background:#152A52;color:#fff;border-radius:12px;padding:14px}.p0-kpi b{display:block;font-size:20px}.p0-kpi span{font-size:11px;opacity:.8}
+@media(max-width:900px){.p0-four{grid-template-columns:1fr 1fr}.p0-flow{grid-template-columns:1fr 1fr}.p0-grid{grid-template-columns:1fr}.p0-kpi{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.p0{margin:20px 0 30px;border-radius:14px}.p0-head{padding:19px}.p0-head h2{font-size:24px}.p0-body{padding:14px}.p0-four{grid-template-columns:1fr}.p0-flow{grid-template-columns:1fr}.p0-kpi{grid-template-columns:1fr 1fr}.p0-search{min-width:100%}}
